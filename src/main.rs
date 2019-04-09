@@ -1,0 +1,212 @@
+/*
+* Copyright 2019 Michal Mauser
+*
+* This program is free software: you can redistribute it and/or modify
+* it under the terms of the GNU Affero General Public License as published by
+* the Free Software Foundation, either version 3 of the License, or
+* (at your option) any later version.
+*
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU Affero General Public License for more details.
+*
+* You should have received a copy of the GNU Affero General Public License
+* along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+#![feature(proc_macro_hygiene, decl_macro)]
+
+#[macro_use] extern crate rocket;
+extern crate rocket_contrib;
+#[macro_use] extern crate serde_derive;
+extern crate mysql;
+
+use rocket::{Rocket, State};
+use rocket::fairing::AdHoc;
+use rocket_contrib::templates::Template;
+use rocket::request::FlashMessage;
+use mysql as my;
+
+const ERROR_PAGE: &'static str = "error";
+
+enum Language {
+    English,
+    Czech,
+}
+
+#[get("/")]
+fn index(flash: Option<FlashMessage>, conn: State<my::Pool>) -> Template {
+    #[derive(Serialize)]
+    struct Overview<'a> {
+        resource_count: usize,
+        design_count: usize,
+        transform_count: usize,
+        message: Option<&'a str>,
+    }
+    impl<'a> Overview<'a> {
+        fn message(mut self, msg: &'a str) -> Self { self.message = Some(msg); self}
+    }
+
+    let resource_count = conn.first_exec("SELECT COUNT(res_id) from resource",()).unwrap().unwrap().get(0).unwrap();
+    let design_count = conn.first_exec("SELECT COUNT(dsgn_id) from design",()).unwrap().unwrap().get(0).unwrap();
+    let transform_count = conn.first_exec("SELECT COUNT(transform_hdr_id) from transform_hdr",()).unwrap().unwrap().get(0).unwrap();
+
+    let overview = Overview {
+        resource_count,
+        design_count,
+        transform_count,
+        message: None
+    };
+
+     if let Some(x) = flash {
+        Template::render("index", overview.message(x.msg()))
+    } else { Template::render("index", overview) }
+}
+
+#[get("/resources")]
+fn resources(conn: State<my::Pool>) -> Template {
+    #[derive(Serialize)]
+    struct Resource {
+        id: u64,
+        name: String,
+        type_id: String,
+        locations: u64,
+        designs: u64,
+        quantity: Option<f64>,
+    }
+
+    let query_result = conn.prep_exec("SELECT resource.res_id, resource.res_name, resource_type.res_type_name, \
+    (SELECT COUNT(res_loc_id) FROM resource_location WHERE resource.res_id = resource_location.res_id) as \"locations\", \
+    (SELECT COUNT(res_dsgn_id) FROM resource_design WHERE resource.res_id = resource_design.res_id) as \"designs\", \
+    (SELECT SUM(qty_val) FROM resource_location WHERE resource.res_id = resource_location.res_id) as \"total quantity\" \
+    FROM resource LEFT JOIN resource_type ON resource.res_type_id = resource_type.res_type_id", ());
+
+    if query_result.is_err() {
+        return Template::render(ERROR_PAGE, query_result.unwrap_err().to_string());
+    }
+    let mut vec = Vec::new();
+    for result in query_result.unwrap() {
+        match result {
+            Err(e) => return Template::render(ERROR_PAGE, e.to_string()),
+            Ok(row) => {
+                let deconstruct = my::from_row_opt(row);
+                if deconstruct.is_err() {
+                    return Template::render(ERROR_PAGE, deconstruct.unwrap_err().to_string());
+                }
+                vec.push({
+                    let (id, name, type_id, locations, designs, quantity) = deconstruct.unwrap();
+                    Resource {
+                        id,
+                        name,
+                        type_id,
+                        locations,
+                        designs,
+                        quantity,
+                    }
+                });
+            }
+        }
+    }
+    Template::render("resources", vec)
+}
+
+#[get("/designs")]
+fn designs(conn: State<my::Pool>) -> Template {
+    #[derive(Serialize)]
+    struct Design {
+        id: u64,
+        name: String,
+    }
+
+    let query_result = conn.prep_exec("SELECT * FROM design", ());
+
+    if query_result.is_err() {
+        return Template::render(ERROR_PAGE, query_result.unwrap_err().to_string());
+    }
+    let mut vec = Vec::new();
+    for result in query_result.unwrap() {
+        match result {
+            Err(e) => return Template::render(ERROR_PAGE, e.to_string()),
+            Ok(row) => {
+                let deconstruct = my::from_row_opt(row);
+                if deconstruct.is_err() {
+                    return Template::render(ERROR_PAGE, deconstruct.unwrap_err().to_string());
+                }
+                vec.push({
+                    let (id, name) = deconstruct.unwrap();
+                    Design {
+                        id,
+                        name,
+                    }
+                });
+            }
+        }
+    }
+    Template::render("designs", vec)
+}
+
+#[get("/transforms")]
+fn transforms(conn: State<my::Pool>) -> Template {
+    #[derive(Serialize)]
+    struct Transform {
+        id: u64,
+        type_id: String,
+        refer: String,
+        lines: u64,
+    }
+
+    let query_result = conn.prep_exec("SELECT transform_hdr.transform_hdr_id, transform_type.transf_type_name, transform_hdr.transform_ref, \
+    (SELECT COUNT(transform_line_id) FROM transform_line WHERE transform_hdr_id = transform_hdr.transform_hdr_id) as \"lines\" \
+    FROM transform_hdr LEFT JOIN transform_type ON transform_hdr.transform_hdr_id = transform_type.transf_type_id", ());
+
+    if query_result.is_err() {
+        return Template::render(ERROR_PAGE, query_result.unwrap_err().to_string());
+    }
+    let mut vec = Vec::new();
+    for result in query_result.unwrap() {
+        match result {
+            Err(e) => return Template::render(ERROR_PAGE, e.to_string()),
+            Ok(row) => {
+                let deconstruct = my::from_row_opt(row);
+                if deconstruct.is_err() {
+                    return Template::render(ERROR_PAGE, deconstruct.unwrap_err().to_string());
+                }
+                vec.push({
+                    let (id, type_id, refer, lines) = deconstruct.unwrap();
+                    Transform {
+                        id,
+                        type_id,
+                        refer,
+                        lines,
+                    }
+                });
+            }
+        }
+    }
+    Template::render("transforms", vec)
+}
+
+fn rocket() -> Rocket {
+    rocket::ignite()
+        .attach(Template::fairing())
+        .attach(AdHoc::on_attach("template_dir",|rocket| {
+            println!("Adding token managed state from config...");
+            let language = match rocket.config().get_str("template_dir") {
+                Ok("templates_cz") => Language::Czech,
+                _ => Language::English,
+            };
+            Ok(rocket.manage(language))
+        }))
+        .attach(AdHoc::on_attach("db_url",|rocket| {
+            let db_url = rocket.config().get_str("db_url").expect("Please set db_url = \"mysql://...\" in Rocket.toml");
+            let pool = my::Pool::new(db_url).unwrap();
+            Ok(rocket.manage(pool))
+        }))
+        .mount("/", routes![index, resources, designs, transforms])
+        .mount("/static", rocket_contrib::serve::StaticFiles::from("static"))
+}
+
+fn main() {
+    rocket().launch();
+}
