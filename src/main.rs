@@ -27,6 +27,9 @@ use rocket::fairing::AdHoc;
 use rocket_contrib::templates::Template;
 use rocket::request::FlashMessage;
 use mysql as my;
+use serde::Serialize;
+use std::fmt::Debug;
+use mysql::prelude::FromRow;
 
 const ERROR_PAGE: &'static str = "error";
 
@@ -66,7 +69,7 @@ fn index(flash: Option<FlashMessage>, conn: State<my::Pool>) -> Template {
 
 #[get("/resources")]
 fn resources(conn: State<my::Pool>) -> Template {
-    #[derive(Serialize)]
+    #[derive(Serialize, Debug)]
     struct Resource {
         id: u64,
         name: String,
@@ -75,6 +78,28 @@ fn resources(conn: State<my::Pool>) -> Template {
         designs: u64,
         quantity: Option<f64>,
     }
+    impl FromRow for Resource {
+        fn from_row(_row: my::Row) -> Self {
+            unimplemented!()
+        }
+
+        fn from_row_opt(row: my::Row) -> Result<Self, my::FromRowError> {
+            let deconstruct = my::from_row_opt(row);
+            if deconstruct.is_err() {
+                    return Err(deconstruct.unwrap_err());
+            } else {
+                let (id, name, type_id, locations, designs, quantity) = deconstruct.unwrap();
+                Ok(Resource{
+                    id,
+                    name,
+                    type_id,
+                    locations,
+                    designs,
+                    quantity
+                })
+            }
+        }
+    }
 
     let query_result = conn.prep_exec("SELECT resource.res_id, resource.res_name, resource_type.res_type_name, \
     (SELECT COUNT(res_loc_id) FROM resource_location WHERE resource.res_id = resource_location.res_id) as \"locations\", \
@@ -82,109 +107,84 @@ fn resources(conn: State<my::Pool>) -> Template {
     (SELECT SUM(qty_val) FROM resource_location WHERE resource.res_id = resource_location.res_id) as \"total quantity\" \
     FROM resource LEFT JOIN resource_type ON resource.res_type_id = resource_type.res_type_id", ());
 
-    if query_result.is_err() {
-        return Template::render(ERROR_PAGE, query_result.unwrap_err().to_string());
-    }
-    let mut vec = Vec::new();
-    for result in query_result.unwrap() {
-        match result {
-            Err(e) => return Template::render(ERROR_PAGE, e.to_string()),
-            Ok(row) => {
-                let deconstruct = my::from_row_opt(row);
-                if deconstruct.is_err() {
-                    return Template::render(ERROR_PAGE, deconstruct.unwrap_err().to_string());
-                }
-                vec.push({
-                    let (id, name, type_id, locations, designs, quantity) = deconstruct.unwrap();
-                    Resource {
-                        id,
-                        name,
-                        type_id,
-                        locations,
-                        designs,
-                        quantity,
-                    }
-                });
-            }
-        }
-    }
-    Template::render("resources", vec)
+    let vec: Result<Vec<Resource>, String> = catch_mysql_err(query_result);
+    if vec.is_ok() {
+        Template::render("resources", vec.unwrap())
+    } else { Template::render(ERROR_PAGE, vec.unwrap_err()) }
 }
 
 #[get("/designs")]
 fn designs(conn: State<my::Pool>) -> Template {
-    #[derive(Serialize)]
+    #[derive(Serialize, Debug)]
     struct Design {
         id: u64,
         name: String,
     }
+    impl FromRow for Design {
+        fn from_row(_row: my::Row) -> Self {
+            unimplemented!()
+        }
 
-    let query_result = conn.prep_exec("SELECT * FROM design", ());
-
-    if query_result.is_err() {
-        return Template::render(ERROR_PAGE, query_result.unwrap_err().to_string());
-    }
-    let mut vec = Vec::new();
-    for result in query_result.unwrap() {
-        match result {
-            Err(e) => return Template::render(ERROR_PAGE, e.to_string()),
-            Ok(row) => {
-                let deconstruct = my::from_row_opt(row);
-                if deconstruct.is_err() {
-                    return Template::render(ERROR_PAGE, deconstruct.unwrap_err().to_string());
-                }
-                vec.push({
-                    let (id, name) = deconstruct.unwrap();
-                    Design {
-                        id,
-                        name,
-                    }
-                });
+        fn from_row_opt(row: my::Row) -> Result<Self, my::FromRowError> {
+            let deconstruct = my::from_row_opt(row);
+            if deconstruct.is_err() {
+                return Err(deconstruct.unwrap_err());
+            } else {
+                let (id, name) = deconstruct.unwrap();
+                Ok(Design {
+                    id,
+                    name,
+                })
             }
         }
     }
-    Template::render("designs", vec)
+
+    let query_result = conn.prep_exec("SELECT * FROM design", ());
+
+    let vec: Result<Vec<Design>, String> = catch_mysql_err(query_result);
+    if vec.is_ok() {
+        Template::render("designs", vec.unwrap())
+    } else { Template::render(ERROR_PAGE, vec.unwrap_err()) }
 }
 
 #[get("/transforms")]
 fn transforms(conn: State<my::Pool>) -> Template {
-    #[derive(Serialize)]
+    #[derive(Serialize, Debug)]
     struct Transform {
         id: u64,
         type_id: String,
         refer: String,
         lines: u64,
     }
+    impl FromRow for Transform {
+        fn from_row(_row: my::Row) -> Self {
+            unimplemented!()
+        }
+
+        fn from_row_opt(row: my::Row) -> Result<Self, my::FromRowError> {
+            let deconstruct = my::from_row_opt(row);
+            if deconstruct.is_err() {
+                return Err(deconstruct.unwrap_err());
+            } else {
+                let (id, type_id, refer, lines) = deconstruct.unwrap();
+                Ok(Transform {
+                    id,
+                    type_id,
+                    refer,
+                    lines
+                })
+            }
+        }
+    }
 
     let query_result = conn.prep_exec("SELECT transform_hdr.transform_hdr_id, transform_type.transf_type_name, transform_hdr.transform_ref, \
     (SELECT COUNT(transform_line_id) FROM transform_line WHERE transform_hdr_id = transform_hdr.transform_hdr_id) as \"lines\" \
     FROM transform_hdr LEFT JOIN transform_type ON transform_hdr.transform_hdr_id = transform_type.transf_type_id", ());
 
-    if query_result.is_err() {
-        return Template::render(ERROR_PAGE, query_result.unwrap_err().to_string());
-    }
-    let mut vec = Vec::new();
-    for result in query_result.unwrap() {
-        match result {
-            Err(e) => return Template::render(ERROR_PAGE, e.to_string()),
-            Ok(row) => {
-                let deconstruct = my::from_row_opt(row);
-                if deconstruct.is_err() {
-                    return Template::render(ERROR_PAGE, deconstruct.unwrap_err().to_string());
-                }
-                vec.push({
-                    let (id, type_id, refer, lines) = deconstruct.unwrap();
-                    Transform {
-                        id,
-                        type_id,
-                        refer,
-                        lines,
-                    }
-                });
-            }
-        }
-    }
-    Template::render("transforms", vec)
+    let vec: Result<Vec<Transform>, String> = catch_mysql_err(query_result);
+    if vec.is_ok() {
+        Template::render("transforms", vec.unwrap())
+    } else { Template::render(ERROR_PAGE, vec.unwrap_err()) }
 }
 
 fn rocket() -> Rocket {
@@ -209,4 +209,24 @@ fn rocket() -> Rocket {
 
 fn main() {
     rocket().launch();
+}
+
+fn catch_mysql_err<T: Serialize + Debug + FromRow>(query_result: Result<my::QueryResult, my::Error>) -> Result<Vec<T>, String> {
+    if query_result.is_err() {
+        return Err(query_result.unwrap_err().to_string());
+    }
+    let mut vec: Vec<T> = Vec::new();
+    for result in query_result.unwrap() {
+        match result {
+            Err(e) => return Err(e.to_string()),
+            Ok(row) => {
+                let deconstruct = T::from_row_opt(row);
+                if deconstruct.is_err() {
+                    return Err(deconstruct.unwrap_err().to_string());
+                }
+                vec.push(deconstruct.unwrap());
+            }
+        }
+    }
+    Ok(vec)
 }
