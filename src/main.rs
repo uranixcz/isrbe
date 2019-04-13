@@ -43,7 +43,6 @@ fn index(flash: Option<FlashMessage>, conn: State<my::Pool>) -> Template {
     #[derive(Serialize)]
     struct Overview<'a> {
         resource_count: usize,
-        design_count: usize,
         transform_count: usize,
         message: Option<&'a str>,
     }
@@ -52,12 +51,10 @@ fn index(flash: Option<FlashMessage>, conn: State<my::Pool>) -> Template {
     }
 
     let resource_count = conn.first_exec("SELECT COUNT(res_id) from resource",()).unwrap().unwrap().get(0).unwrap();
-    let design_count = conn.first_exec("SELECT COUNT(dsgn_id) from design",()).unwrap().unwrap().get(0).unwrap();
     let transform_count = conn.first_exec("SELECT COUNT(transform_hdr_id) from transform_hdr",()).unwrap().unwrap().get(0).unwrap();
 
     let overview = Overview {
         resource_count,
-        design_count,
         transform_count,
         message: None
     };
@@ -75,7 +72,6 @@ fn resources(conn: State<my::Pool>) -> Template {
         name: String,
         type_id: String,
         locations: u64,
-        designs: u64,
         quantity: Option<f64>,
     }
     impl FromRow for Resource {
@@ -88,13 +84,12 @@ fn resources(conn: State<my::Pool>) -> Template {
             if deconstruct.is_err() {
                     return Err(deconstruct.unwrap_err());
             } else {
-                let (id, name, type_id, locations, designs, quantity) = deconstruct.unwrap();
+                let (id, name, type_id, locations, quantity) = deconstruct.unwrap();
                 Ok(Resource {
                     id,
                     name,
                     type_id,
                     locations,
-                    designs,
                     quantity
                 })
             }
@@ -103,47 +98,12 @@ fn resources(conn: State<my::Pool>) -> Template {
 
     let query_result = conn.prep_exec("SELECT resource.res_id, resource.res_name, resource_type.res_type_name, \
     (SELECT COUNT(res_loc_id) FROM resource_location WHERE resource.res_id = resource_location.res_id) as \"locations\", \
-    (SELECT COUNT(res_dsgn_id) FROM resource_design WHERE resource.res_id = resource_design.res_id) as \"designs\", \
     (SELECT SUM(qty_val) FROM resource_location WHERE resource.res_id = resource_location.res_id) as \"total quantity\" \
     FROM resource LEFT JOIN resource_type ON resource.res_type_id = resource_type.res_type_id", ());
 
     let vec: Result<Vec<Resource>, String> = catch_mysql_err(query_result);
     if vec.is_ok() {
         Template::render("resources", vec.unwrap())
-    } else { Template::render(ERROR_PAGE, vec.unwrap_err()) }
-}
-
-#[get("/designs")]
-fn designs(conn: State<my::Pool>) -> Template {
-    #[derive(Serialize, Debug)]
-    struct Design {
-        id: u64,
-        name: String,
-    }
-    impl FromRow for Design {
-        fn from_row(_row: my::Row) -> Self {
-            unimplemented!()
-        }
-
-        fn from_row_opt(row: my::Row) -> Result<Self, my::FromRowError> {
-            let deconstruct = my::from_row_opt(row);
-            if deconstruct.is_err() {
-                return Err(deconstruct.unwrap_err());
-            } else {
-                let (id, name) = deconstruct.unwrap();
-                Ok(Design {
-                    id,
-                    name,
-                })
-            }
-        }
-    }
-
-    let query_result = conn.prep_exec("SELECT * FROM design", ());
-
-    let vec: Result<Vec<Design>, String> = catch_mysql_err(query_result);
-    if vec.is_ok() {
-        Template::render("designs", vec.unwrap())
     } else { Template::render(ERROR_PAGE, vec.unwrap_err()) }
 }
 
@@ -203,7 +163,7 @@ fn rocket() -> Rocket {
             let pool = my::Pool::new(db_url).unwrap();
             Ok(rocket.manage(pool))
         }))
-        .mount("/", routes![index, resources, designs, transforms])
+        .mount("/", routes![index, resources, transforms])
         .mount("/static", rocket_contrib::serve::StaticFiles::from("static"))
 }
 
