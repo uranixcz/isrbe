@@ -89,7 +89,7 @@ fn resources(conn: State<my::Pool>) -> Template {
                     return Err(deconstruct.unwrap_err());
             } else {
                 let (id, name, type_id, locations, designs, quantity) = deconstruct.unwrap();
-                Ok(Resource{
+                Ok(Resource {
                     id,
                     name,
                     type_id,

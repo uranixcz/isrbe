@@ -1,25 +1,4 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8"/>
-    <meta name="viewport" content="width=device-width"/>
-    <title>IS RBE</title>
-    <style>
-    table, th, td {
-        border: 1px solid black;
-        border-collapse: collapse;
-        padding: 1px 10px;
-    }
-    </style>
-</head>
-<body>
-<h1>IS RBE</h1>
-<p>Early development sample</p>
-<p>
-    <a href="/resources">Resources</a> &middot;
-    <a href="/designs">Designs</a> &middot;
-    <a href="/transforms">Transformations</a>
-</p>
+{{#*inline "page"}}
 <p><b>{{message}}</b></p>
 <table>
     <tr>
@@ -32,6 +11,5 @@
         <td>Transformations</td><td>{{transform_count}}</td>
     </tr>
 </table>
-<p>Build 4.4.2019</p>
-</body>
-</html>
+{{/inline}}
+{{> layout}}
