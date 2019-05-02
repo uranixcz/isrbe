@@ -31,6 +31,7 @@ use serde::Serialize;
 use std::fmt::Debug;
 use mysql::prelude::FromRow;
 use std::fs;
+use rocket::response::{Flash, Redirect};
 
 const ERROR_PAGE: &'static str = "error";
 
@@ -38,6 +39,8 @@ enum Language {
     English,
     Czech,
 }
+
+type ResourceTypes = Vec<(usize, &'static str)>;
 
 #[get("/")]
 fn index(flash: Option<FlashMessage>, conn: State<my::Pool>) -> Template {
@@ -106,6 +109,20 @@ fn resources(conn: State<my::Pool>) -> Template {
     }
 }
 
+#[get("/addresource")]
+fn addresource_page(resource_types: State<ResourceTypes>) -> Template {
+    Template::render("resource", resource_types.inner())
+}
+
+#[get("/addresource?<name>&<type_id>")]
+fn addresource(name: String, type_id: usize, conn: State<my::Pool>) -> Flash<Redirect> {
+    let result = conn.prep_exec("INSERT INTO resource (res_name, res_type_id) VALUES (?, ?)", (name, type_id));
+    match result {
+        Ok(_) => Flash::success(Redirect::to("/"), "Resource added."),
+        Err(e) => Flash::error(Redirect::to("/"), e.to_string())
+    }
+}
+
 #[get("/transforms")]
 fn transforms(conn: State<my::Pool>) -> Template {
     #[derive(Serialize, Debug)]
@@ -146,6 +163,7 @@ fn transforms(conn: State<my::Pool>) -> Template {
 }
 
 fn rocket() -> Rocket {
+    let resource_types = vec![(1_usize, "Natural"), (2, "Transport"), (3, "Energy"), (4, "Production")];
     rocket::ignite()
         .attach(Template::fairing())
         .attach(AdHoc::on_attach("template_dir",|rocket| {
@@ -161,7 +179,8 @@ fn rocket() -> Rocket {
             let pool = my::Pool::new(db_url).unwrap();
             Ok(rocket.manage(pool))
         }))
-        .mount("/", routes![index, resources, transforms])
+        .manage(resource_types)
+        .mount("/", routes![index, resources, addresource_page, addresource, transforms])
         .mount("/static", rocket_contrib::serve::StaticFiles::from("static"))
 }
 

@@ -1,0 +1,25 @@
+{{#*inline "page"}}
+<form action="/addresource" method="get" accept-charset="utf-8">
+    <table>
+        <tr>
+            <td><label for="name">resource name</label></td>
+            <td><input type="text" name="name" required /></td>
+        </tr>
+        <tr>
+            <td><label for="type_id">resource type</label></td>
+            <td>
+                <select name="type_id" id="type_id" required autofocus>
+                {{#each .}}
+                    <option value="{{0}}">{{1}}</option>
+                {{/each}}
+                </select>
+            </td>
+        </tr>
+        <tr>
+            <td></td>
+            <td><input type="submit" value="Submit" /></td>
+        </tr>
+    </table>
+</form>
+{{/inline}}
+{{> layout}}
