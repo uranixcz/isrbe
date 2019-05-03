@@ -1,25 +1,33 @@
 {{#*inline "page"}}
-<form action="/addresource" method="get" accept-charset="utf-8">
-    <table>
-        <tr>
-            <td><label for="name">resource name</label></td>
-            <td><input type="text" name="name" required /></td>
-        </tr>
-        <tr>
-            <td><label for="type_id">resource type</label></td>
-            <td>
-                <select name="type_id" id="type_id" required autofocus>
-                {{#each .}}
-                    <option value="{{0}}">{{1}}</option>
-                {{/each}}
-                </select>
-            </td>
-        </tr>
-        <tr>
-            <td></td>
-            <td><input type="submit" value="Submit" /></td>
-        </tr>
-    </table>
-</form>
+    <form action="{{#if resource}}/modifyresource{{else}}/addresource{{/if}}" method="get" accept-charset="utf-8">
+        <table>
+            <tr>
+                <td><label for="name">resource name</label></td>
+                <td><input type="text" name="name" value="{{resource.name}}" required autofocus/></td>
+            </tr>
+            <tr>
+                <td><label for="type_id">resource type</label></td>
+                <td>
+                    <select name="type_id" id="type_id" required>
+                        {{#if resource}}<option value="{{resource.type_id}}" selected>{{resource.type_name}}</option>{{/if}}
+                        {{#each types}}
+                           <option value="{{id}}">{{type_name}}</option>
+                        {{/each}}
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td>{{#if resource}}<input type="hidden" name="id" value="{{resource.id}}"/>{{/if}}</td>
+                <td><input type="submit" value="Submit" /></td>
+            </tr>
+        </table>
+    </form>
+    {{#if resource}}
+        <br>
+        <table>
+            <tr><th>Locations</th></tr>
+            <tr><td>data here</td></tr>
+        </table>
+    {{/if}}
 {{/inline}}
 {{> layout}}

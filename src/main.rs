@@ -29,9 +29,15 @@ use rocket::request::FlashMessage;
 use mysql as my;
 use serde::Serialize;
 use std::fmt::Debug;
-use mysql::prelude::FromRow;
-use std::fs;
 use rocket::response::{Flash, Redirect};
+use my::prelude::FromRow;
+use locations::*;
+use resources::*;
+use transforms::*;
+
+mod locations;
+mod resources;
+mod transforms;
 
 const ERROR_PAGE: &'static str = "error";
 
@@ -40,14 +46,20 @@ enum Language {
     Czech,
 }
 
-type ResourceTypes = Vec<(usize, &'static str)>;
+#[derive(Serialize, Clone)]
+pub struct ResourceType {
+    id: u64,
+    type_name: &'static str,
+}
+
+type ResourceTypes = Vec<ResourceType>;
 
 #[get("/")]
 fn index(flash: Option<FlashMessage>, conn: State<my::Pool>) -> Template {
     #[derive(Serialize)]
     struct Overview<'a> {
-        resource_count: usize,
-        transform_count: usize,
+        resource_count: u64,
+        transform_count: u64,
         message: Option<&'a str>,
     }
     impl<'a> Overview<'a> {
@@ -68,102 +80,8 @@ fn index(flash: Option<FlashMessage>, conn: State<my::Pool>) -> Template {
     } else { Template::render("index", overview) }
 }
 
-#[get("/resources")]
-fn resources(conn: State<my::Pool>) -> Template {
-    #[derive(Serialize, Debug)]
-    struct Resource {
-        id: u64,
-        name: String,
-        type_id: String,
-        locations: u64,
-        quantity: Option<f64>,
-    }
-    impl FromRow for Resource {
-        fn from_row(_row: my::Row) -> Self {
-            unimplemented!()
-        }
-
-        fn from_row_opt(row: my::Row) -> Result<Self, my::FromRowError> {
-            let deconstruct = my::from_row_opt(row);
-            if deconstruct.is_err() {
-                    return Err(deconstruct.unwrap_err());
-            } else {
-                let (id, name, type_id, locations, quantity) = deconstruct.unwrap();
-                Ok(Resource {
-                    id,
-                    name,
-                    type_id,
-                    locations,
-                    quantity
-                })
-            }
-        }
-    }
-
-    let query_result = conn.prep_exec(fs::read_to_string("sql/resources.sql").expect("file error"), ());
-
-    let vec: Result<Vec<Resource>, String> = catch_mysql_err(query_result);
-    match vec {
-        Ok(v) => Template::render("resources", v),
-        Err(e) => Template::render(ERROR_PAGE, e)
-    }
-}
-
-#[get("/addresource")]
-fn addresource_page(resource_types: State<ResourceTypes>) -> Template {
-    Template::render("resource", resource_types.inner())
-}
-
-#[get("/addresource?<name>&<type_id>")]
-fn addresource(name: String, type_id: usize, conn: State<my::Pool>) -> Flash<Redirect> {
-    let result = conn.prep_exec("INSERT INTO resource (res_name, res_type_id) VALUES (?, ?)", (name, type_id));
-    match result {
-        Ok(_) => Flash::success(Redirect::to("/"), "Resource added."),
-        Err(e) => Flash::error(Redirect::to("/"), e.to_string())
-    }
-}
-
-#[get("/transforms")]
-fn transforms(conn: State<my::Pool>) -> Template {
-    #[derive(Serialize, Debug)]
-    struct Transform {
-        id: u64,
-        type_id: String,
-        refer: String,
-        lines: u64,
-    }
-    impl FromRow for Transform {
-        fn from_row(_row: my::Row) -> Self {
-            unimplemented!()
-        }
-
-        fn from_row_opt(row: my::Row) -> Result<Self, my::FromRowError> {
-            let deconstruct = my::from_row_opt(row);
-            if deconstruct.is_err() {
-                return Err(deconstruct.unwrap_err());
-            } else {
-                let (id, type_id, refer, lines) = deconstruct.unwrap();
-                Ok(Transform {
-                    id,
-                    type_id,
-                    refer,
-                    lines
-                })
-            }
-        }
-    }
-
-    let query_result = conn.prep_exec(fs::read_to_string("sql/transforms.sql").expect("file error"), ());
-
-    let vec: Result<Vec<Transform>, String> = catch_mysql_err(query_result);
-    match vec {
-        Ok(v) =>Template::render("transforms", v),
-        Err(e) => Template::render(ERROR_PAGE, e)
-    }
-}
-
 fn rocket() -> Rocket {
-    let resource_types = vec![(1_usize, "Natural"), (2, "Transport"), (3, "Energy"), (4, "Production")];
+    let resource_types = vec![ResourceType {id: 1, type_name: "Natural"}, ResourceType {id: 2, type_name: "Transport"}, ResourceType {id: 3, type_name: "Energy"}, ResourceType {id: 4, type_name: "Production"}];
     rocket::ignite()
         .attach(Template::fairing())
         .attach(AdHoc::on_attach("template_dir",|rocket| {
@@ -180,7 +98,9 @@ fn rocket() -> Rocket {
             Ok(rocket.manage(pool))
         }))
         .manage(resource_types)
-        .mount("/", routes![index, resources, addresource_page, addresource, transforms])
+        .mount("/", routes![index, resources, resource, addresource_page, addresource, modifyresource,
+        addlocation,
+        transforms])
         .mount("/static", rocket_contrib::serve::StaticFiles::from("static"))
 }
 
