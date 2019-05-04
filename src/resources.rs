@@ -71,8 +71,8 @@ pub fn addresource_page<'a>(resource_types: State<ResourceTypes>) -> Template {
 
 #[get("/addresource?<name>&<type_id>")]
 pub fn addresource(name: String, type_id: u64, conn: State<my::Pool>) -> Flash<Redirect> {
-    let result = conn.prep_exec("INSERT INTO resource (res_name, res_type_id) VALUES (?, ?)", (name, type_id));
-    match result {
+    let query_result = conn.prep_exec("INSERT INTO resource (res_name, res_type_id) VALUES (?, ?)", (name, type_id));
+    match query_result {
         Ok(_) => Flash::success(Redirect::to("/"), "Resource added."),
         Err(e) => Flash::error(Redirect::to("/"), e.to_string())
     }
@@ -111,7 +111,7 @@ pub fn resource(id: u64, resource_types: State<ResourceTypes>, conn: State<my::P
     let key = (resource.type_id - 1) as usize;
     resource.type_name = resource_types[key].type_name.to_string();
     resource_types.remove(key);
-    resource_types.sort_by(|a, b| a.type_name.cmp(b.type_name));
+    resource_types.sort_unstable_by(|a, b| a.type_name.cmp(b.type_name));
     Template::render("resource", ResourceContext {
         types: &resource_types,
         resource: Some(resource)
@@ -119,6 +119,10 @@ pub fn resource(id: u64, resource_types: State<ResourceTypes>, conn: State<my::P
 }
 
 #[get("/modifyresource?<id>&<name>&<type_id>")]
-pub fn modifyresource(id: u64, name: String, type_id: u64) -> Flash<Redirect> {
-    Flash::error(Redirect::to("/"), "work in progress")
+pub fn modifyresource(id: u64, name: String, type_id: u64, conn: State<my::Pool>) -> Flash<Redirect> {
+    let query_result = conn.prep_exec("UPDATE resource SET res_name = ?, res_type_id =? WHERE res_id = ?", (name, type_id, id));
+    match query_result {
+        Ok(_) => Flash::success(Redirect::to("/"), "Resource modified."),
+        Err(e) => Flash::error(Redirect::to("/"), e.to_string())
+    }
 }
