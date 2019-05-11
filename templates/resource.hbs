@@ -24,9 +24,19 @@
     </form>
     {{#if resource}}
         <br>
+        Locations
         <table>
-            <tr><th>Locations</th></tr>
-            <tr><td>data here</td></tr>
+            <tr><th>ID</th><th>Value</th><th>Radius</th><th>Latitude</th><th>Longitude</th><th>Operation</th></tr>
+            {{#each resource.locations}}
+                    <tr>
+                        <td>{{id}}</td>
+                        <td>{{value}} {{unit}}</td>
+                        <td>{{radius}}</td>
+                        <td>{{lat}}</td>
+                        <td>{{lon}}</td>
+                        <td>Edit Remove</td>
+                    </tr>
+            {{/each}}
         </table>
     {{/if}}
 {{/inline}}

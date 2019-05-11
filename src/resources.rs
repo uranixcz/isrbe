@@ -18,7 +18,16 @@ struct Resource {
     name: String,
     type_id: u64,
     type_name: String,
-    locations: Vec<()>,
+    locations: Vec<Location>,
+}
+#[derive(Serialize, Debug)]
+struct Location {
+    id: u64,
+    value: f64,
+    radius: u64,
+    lat: f64,
+    lon: f64,
+    unit: String,
 }
 
 #[get("/resources")]
@@ -84,7 +93,6 @@ pub fn resource(id: u64, resource_types: State<ResourceTypes>, conn: State<my::P
         fn from_row(_row: my::Row) -> Self {
             unimplemented!()
         }
-
         fn from_row_opt(row: my::Row) -> Result<Self, my::FromRowError> {
             let deconstruct = my::from_row_opt(row);
             if deconstruct.is_err() {
@@ -101,7 +109,28 @@ pub fn resource(id: u64, resource_types: State<ResourceTypes>, conn: State<my::P
             }
         }
     }
-    let query_result = conn.prep_exec("SELECT res_id, res_name, res_type_id FROM resource WHERE res_id = ?", (id,));
+    impl FromRow for Location {
+        fn from_row(_row: my::Row) -> Self {
+            unimplemented!()
+        }
+        fn from_row_opt(row: my::Row) -> Result<Self, my::FromRowError> {
+            let deconstruct = my::from_row_opt(row);
+            if deconstruct.is_err() {
+                return Err(deconstruct.unwrap_err());
+            } else {
+                let (id, value, radius, lat, lon, unit) = deconstruct.unwrap();
+                Ok(Location {
+                    id,
+                    value,
+                    radius,
+                    lat,
+                    lon,
+                    unit,
+                })
+            }
+        }
+    }
+    let mut query_result = conn.prep_exec("SELECT res_id, res_name, res_type_id FROM resource WHERE res_id = ?", (id,));
     let vec: Result<Vec<Resource>, String> = catch_mysql_err(query_result);
     if vec.is_err() {
         return Template::render(ERROR_PAGE, vec.unwrap_err().to_string())
@@ -112,6 +141,15 @@ pub fn resource(id: u64, resource_types: State<ResourceTypes>, conn: State<my::P
     resource.type_name = resource_types[key].type_name.to_string();
     resource_types.remove(key);
     resource_types.sort_unstable_by(|a, b| a.type_name.cmp(b.type_name));
+
+    query_result = conn.prep_exec("SELECT res_loc_id, loc_val, loc_radius, loc_lat, loc_lon, quantity.qty_unit FROM resource_location \
+    LEFT JOIN quantity ON quantity.qty_id = resource_location.res_qty_id WHERE res_id = ?", (id,));
+    let vec: Result<Vec<Location>, String> = catch_mysql_err(query_result);
+    if vec.is_err() {
+        return Template::render(ERROR_PAGE, vec.unwrap_err().to_string())
+    }
+    resource.locations = vec.unwrap();
+
     Template::render("resource", ResourceContext {
         types: &resource_types,
         resource: Some(resource)

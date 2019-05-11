@@ -78,7 +78,7 @@ CREATE TABLE `resource` (
   `res_name` varchar(100) COLLATE utf8_unicode_ci NOT NULL,
   `res_type_id` bigint(20) unsigned NOT NULL,
   PRIMARY KEY (`res_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -87,7 +87,7 @@ CREATE TABLE `resource` (
 
 LOCK TABLES `resource` WRITE;
 /*!40000 ALTER TABLE `resource` DISABLE KEYS */;
-INSERT INTO `resource` VALUES (1,'brambor',1),(2,'hranol dřevěný',4),(3,'hřebík ocelový',4);
+INSERT INTO `resource` VALUES (1,'brambor',2),(2,'hranol dřevěný',4),(3,'hřebík ocelový',4),(4,'abcdefg',3),(5,'acqacq',1),(6,'acqacq3',2);
 /*!40000 ALTER TABLE `resource` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -100,7 +100,8 @@ DROP TABLE IF EXISTS `resource_location`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `resource_location` (
   `res_loc_id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `res_qty_id` bigint(20) unsigned NOT NULL,
+  `res_id` bigint(20) unsigned NOT NULL COMMENT 'pridano MM',
+  `res_qty_id` bigint(20) unsigned NOT NULL COMMENT 'qty_id',
   `loc_lat` decimal(10,0) NOT NULL,
   `loc_lon` decimal(10,0) NOT NULL,
   `loc_radius` decimal(10,0) unsigned NOT NULL,
@@ -115,7 +116,7 @@ CREATE TABLE `resource_location` (
 
 LOCK TABLES `resource_location` WRITE;
 /*!40000 ALTER TABLE `resource_location` DISABLE KEYS */;
-INSERT INTO `resource_location` VALUES (1,1,0,0,1000000,0);
+INSERT INTO `resource_location` VALUES (1,1,2,0,0,1000000,555);
 /*!40000 ALTER TABLE `resource_location` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -256,4 +257,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2019-05-01 18:16:05
+-- Dump completed on 2019-05-11 20:19:32
