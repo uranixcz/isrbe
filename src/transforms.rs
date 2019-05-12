@@ -4,7 +4,7 @@ use rocket::response::{Flash, Redirect};
 use mysql as my;
 use my::prelude::FromRow;
 use std::fs;
-use crate::{catch_mysql_err, ERROR_PAGE, ResourceTypes};
+use crate::{catch_mysql_err, ERROR_PAGE, Config};
 
 #[get("/transforms")]
 pub fn transforms(conn: State<my::Pool>) -> Template {

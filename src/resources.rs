@@ -4,11 +4,12 @@ use rocket::response::{Flash, Redirect};
 use mysql as my;
 use my::prelude::FromRow;
 use std::fs;
-use crate::{catch_mysql_err, ERROR_PAGE, ResourceTypes, ResourceType};
+use crate::{catch_mysql_err, ERROR_PAGE, Config, ResourceType, Quantity};
 
 #[derive(Serialize)]
 struct ResourceContext<'a> {
-    types: &'a ResourceTypes,
+    types: &'a Vec<ResourceType>,
+    quantities: &'a Vec<Quantity>,
     resource: Option<Resource>,
 }
 
@@ -20,6 +21,27 @@ struct Resource {
     type_name: String,
     locations: Vec<Location>,
 }
+impl FromRow for Resource {
+    fn from_row(_row: my::Row) -> Self {
+        unimplemented!()
+    }
+    fn from_row_opt(row: my::Row) -> Result<Self, my::FromRowError> {
+        let deconstruct = my::from_row_opt(row);
+        if deconstruct.is_err() {
+            return Err(deconstruct.unwrap_err());
+        } else {
+            let (id, name, type_id) = deconstruct.unwrap();
+            Ok(Resource {
+                id,
+                name,
+                type_id,
+                type_name: "".to_string(),
+                locations: Vec::new(),
+            })
+        }
+    }
+}
+
 #[derive(Serialize, Debug)]
 struct Location {
     id: u64,
@@ -28,6 +50,27 @@ struct Location {
     lat: f64,
     lon: f64,
     unit: String,
+}
+impl FromRow for Location {
+    fn from_row(_row: my::Row) -> Self {
+        unimplemented!()
+    }
+    fn from_row_opt(row: my::Row) -> Result<Self, my::FromRowError> {
+        let deconstruct = my::from_row_opt(row);
+        if deconstruct.is_err() {
+            return Err(deconstruct.unwrap_err());
+        } else {
+            let (id, value, radius, lat, lon, unit) = deconstruct.unwrap();
+            Ok(Location {
+                id,
+                value,
+                radius,
+                lat,
+                lon,
+                unit,
+            })
+        }
+    }
 }
 
 #[get("/resources")]
@@ -44,7 +87,6 @@ pub fn resources(conn: State<my::Pool>) -> Template {
         fn from_row(_row: my::Row) -> Self {
             unimplemented!()
         }
-
         fn from_row_opt(row: my::Row) -> Result<Self, my::FromRowError> {
             let deconstruct = my::from_row_opt(row);
             if deconstruct.is_err() {
@@ -72,10 +114,8 @@ pub fn resources(conn: State<my::Pool>) -> Template {
 }
 
 #[get("/addresource")]
-pub fn addresource_page<'a>(resource_types: State<ResourceTypes>) -> Template {
-
-
-    Template::render("resource", ResourceContext { types: resource_types.inner(), resource: None })
+pub fn addresource_page<'a>(config: State<Config>) -> Template {
+    Template::render("resource", ResourceContext { types: &config.resource_types, quantities: &Vec::new(), resource: None})
 }
 
 #[get("/addresource?<name>&<type_id>")]
@@ -88,59 +128,18 @@ pub fn addresource(name: String, type_id: u64, conn: State<my::Pool>) -> Flash<R
 }
 
 #[get("/resource/<id>")]
-pub fn resource(id: u64, resource_types: State<ResourceTypes>, conn: State<my::Pool>) -> Template {
-    impl FromRow for Resource {
-        fn from_row(_row: my::Row) -> Self {
-            unimplemented!()
-        }
-        fn from_row_opt(row: my::Row) -> Result<Self, my::FromRowError> {
-            let deconstruct = my::from_row_opt(row);
-            if deconstruct.is_err() {
-                return Err(deconstruct.unwrap_err());
-            } else {
-                let (id, name, type_id) = deconstruct.unwrap();
-                Ok(Resource {
-                    id,
-                    name,
-                    type_id,
-                    type_name: "".to_string(),
-                    locations: Vec::new(),
-                })
-            }
-        }
-    }
-    impl FromRow for Location {
-        fn from_row(_row: my::Row) -> Self {
-            unimplemented!()
-        }
-        fn from_row_opt(row: my::Row) -> Result<Self, my::FromRowError> {
-            let deconstruct = my::from_row_opt(row);
-            if deconstruct.is_err() {
-                return Err(deconstruct.unwrap_err());
-            } else {
-                let (id, value, radius, lat, lon, unit) = deconstruct.unwrap();
-                Ok(Location {
-                    id,
-                    value,
-                    radius,
-                    lat,
-                    lon,
-                    unit,
-                })
-            }
-        }
-    }
+pub fn resource(id: u64, config: State<Config>, conn: State<my::Pool>) -> Template {
     let mut query_result = conn.prep_exec("SELECT res_id, res_name, res_type_id FROM resource WHERE res_id = ?", (id,));
     let vec: Result<Vec<Resource>, String> = catch_mysql_err(query_result);
     if vec.is_err() {
         return Template::render(ERROR_PAGE, vec.unwrap_err().to_string())
     }
-    let mut resource_types = resource_types.clone();
+    let mut resource_types = config.resource_types.clone();
     let mut resource = vec.unwrap().remove(0);
     let key = (resource.type_id - 1) as usize;
     resource.type_name = resource_types[key].type_name.to_string();
     resource_types.remove(key);
-    resource_types.sort_unstable_by(|a, b| a.type_name.cmp(b.type_name));
+    resource_types.sort_unstable_by(|a, b| a.type_name.cmp(&b.type_name));
 
     query_result = conn.prep_exec("SELECT res_loc_id, loc_val, loc_radius, loc_lat, loc_lon, quantity.qty_unit FROM resource_location \
     LEFT JOIN quantity ON quantity.qty_id = resource_location.res_qty_id WHERE res_id = ?", (id,));
@@ -152,6 +151,7 @@ pub fn resource(id: u64, resource_types: State<ResourceTypes>, conn: State<my::P
 
     Template::render("resource", ResourceContext {
         types: &resource_types,
+        quantities: &config.quantities,
         resource: Some(resource)
     })
 }

@@ -2,11 +2,11 @@
     <form action="{{#if resource}}/modifyresource{{else}}/addresource{{/if}}" method="get" accept-charset="utf-8">
         <table>
             <tr>
-                <td><label for="name">resource name</label></td>
-                <td><input type="text" name="name" value="{{resource.name}}" required autofocus/></td>
+                <td><label for="name">Resource name</label></td>
+                <td><input type="text" name="name" id="name" value="{{resource.name}}" required autofocus/></td>
             </tr>
             <tr>
-                <td><label for="type_id">resource type</label></td>
+                <td><label for="type_id">Resource type</label></td>
                 <td>
                     <select name="type_id" id="type_id" required>
                         {{#if resource}}<option value="{{resource.type_id}}" selected>{{resource.type_name}}</option>{{/if}}
@@ -24,14 +24,51 @@
     </form>
     {{#if resource}}
         <br>
-        Locations
+        <form action="/addlocation" method="get" accept-charset="utf-8">
+            <table>
+                <tr><th colspan="2">Add location</th></tr>
+                <tr>
+                    <td><label for="amount">Amount</label></td>
+                    <td><input type="number" id="amount" name="amount" min="0.01" step="0.01" required /></td>
+                </tr>
+                <tr>
+                    <td><label for="unit">Unit</label></td>
+                    <td>
+                        <select name="unit" id="unit" required>
+                            <option value="0">Piece</option>
+                            {{#each quantities}}
+                                <option value="{{id}}">{{name}} ({{unit}})</option>
+                            {{/each}}
+                        </select>
+                    </td>
+                </tr>
+                <tr>
+                    <td><label for="radius">Radius</label></td>
+                    <td><input type="number" id="radius" name="radius" min="0" required /></td>
+                </tr>
+                <tr>
+                    <td><label for="lat">Latitude</label></td>
+                    <td><input type="number" id="lat" name="lat" min="-90" max="90" step="0.01" required /></td>
+                </tr>
+                <tr>
+                    <td><label for="lon">Longitude</label></td>
+                    <td><input type="number" id="lon" name="lon" min="-180" max="180" step="0.01" required /></td>
+                </tr>
+                <tr>
+                    <td><input type="hidden" name="resource_id" value="{{resource.id}}"></td>
+                    <td><input type="submit" value="Submit" /></td>
+                </tr>
+            </table>
+        </form>
+        <br>
         <table>
+            <tr><th colspan="6">List of locations</th></tr>
             <tr><th>ID</th><th>Value</th><th>Radius</th><th>Latitude</th><th>Longitude</th><th>Operation</th></tr>
             {{#each resource.locations}}
                     <tr>
                         <td>{{id}}</td>
                         <td>{{value}} {{unit}}</td>
-                        <td>{{radius}}</td>
+                        <td>{{radius}} m</td>
                         <td>{{lat}}</td>
                         <td>{{lon}}</td>
                         <td>Edit Remove</td>

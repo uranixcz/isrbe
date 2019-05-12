@@ -46,13 +46,58 @@ enum Language {
     Czech,
 }
 
-#[derive(Serialize, Clone)]
+#[derive(Serialize, Clone, Debug)]
 pub struct ResourceType {
     id: u64,
-    type_name: &'static str,
+    type_name: String,
+}
+impl FromRow for ResourceType {
+    fn from_row(_row: my::Row) -> Self {
+        unimplemented!()
+    }
+    fn from_row_opt(row: my::Row) -> Result<Self, my::FromRowError> {
+        let deconstruct = my::from_row_opt(row);
+        if deconstruct.is_err() {
+            return Err(deconstruct.unwrap_err());
+        } else {
+            let (id, type_name) = deconstruct.unwrap();
+            Ok(ResourceType {
+                id,
+                type_name
+            })
+        }
+    }
 }
 
-type ResourceTypes = Vec<ResourceType>;
+#[derive(Serialize, Debug)]
+struct Quantity {
+    id: u64,
+    name: String,
+    unit: String,
+}
+impl FromRow for Quantity {
+    fn from_row(_row: my::Row) -> Self {
+        unimplemented!()
+    }
+    fn from_row_opt(row: my::Row) -> Result<Self, my::FromRowError> {
+        let deconstruct = my::from_row_opt(row);
+        if deconstruct.is_err() {
+            return Err(deconstruct.unwrap_err());
+        } else {
+            let (id, name, unit) = deconstruct.unwrap();
+            Ok(Quantity {
+                id,
+                name,
+                unit,
+            })
+        }
+    }
+}
+
+pub struct Config {
+    resource_types: Vec<ResourceType>,
+    quantities: Vec<Quantity>,
+}
 
 #[get("/")]
 fn index(flash: Option<FlashMessage>, conn: State<my::Pool>) -> Template {
@@ -81,7 +126,6 @@ fn index(flash: Option<FlashMessage>, conn: State<my::Pool>) -> Template {
 }
 
 fn rocket() -> Rocket {
-    let resource_types = vec![ResourceType {id: 1, type_name: "Natural"}, ResourceType {id: 2, type_name: "Transport"}, ResourceType {id: 3, type_name: "Energy"}, ResourceType {id: 4, type_name: "Production"}];
     rocket::ignite()
         .attach(Template::fairing())
         .attach(AdHoc::on_attach("template_dir",|rocket| {
@@ -92,12 +136,18 @@ fn rocket() -> Rocket {
             };
             Ok(rocket.manage(language))
         }))
-        .attach(AdHoc::on_attach("db_url",|rocket| {
+        .attach(AdHoc::on_attach("db_url", |rocket| {
             let db_url = rocket.config().get_str("db_url").expect("Please set db_url = \"mysql://...\" in Rocket.toml");
             let pool = my::Pool::new(db_url).unwrap();
-            Ok(rocket.manage(pool))
+            let resource_types: Vec<ResourceType> = catch_mysql_err(pool.prep_exec("SELECT res_type_id, res_type_name FROM resource_type", ())).unwrap();
+            let quantities: Vec<Quantity> =  catch_mysql_err(pool.prep_exec("SELECT qty_id, qty_name, qty_unit FROM quantity", ())).unwrap();
+            Ok(rocket.manage(Config {
+                resource_types,
+                quantities,
+            })
+                .manage(pool)
+            )
         }))
-        .manage(resource_types)
         .mount("/", routes![index, resources, resource, addresource_page, addresource, modifyresource,
         addlocation,
         transforms])
