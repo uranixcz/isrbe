@@ -19,7 +19,7 @@ struct Resource <'a>{
     id: u64,
     name: String,
     type_id: u64,
-    type_name: String,
+    type_name: &'a str,
     locations: Vec<Location<'a>>,
 }
 impl<'a> FromRow for Resource<'a> {
@@ -36,7 +36,7 @@ impl<'a> FromRow for Resource<'a> {
                 id,
                 name,
                 type_id,
-                type_name: "".to_string(),
+                type_name: "",
                 locations: Vec::new(),
             })
         }
@@ -104,12 +104,8 @@ pub fn resource(id: u64, config: State<Config>, conn: State<my::Pool>) -> Templa
     if vec.is_err() {
         return Template::render(ERROR_PAGE, vec.unwrap_err().to_string())
     }
-    let mut resource_types = config.resource_types.clone();
     let mut resource = vec.unwrap().remove(0);
-    let key = (resource.type_id - 1) as usize;
-    resource.type_name = resource_types[key].type_name.clone();
-    resource_types.remove(key);
-    resource_types.sort_unstable_by(|a, b| a.type_name.cmp(&b.type_name));
+    resource.type_name = &config.resource_types[(resource.type_id - 1) as usize].type_name;
 
     query_result = conn.prep_exec("SELECT res_loc_id, loc_val, loc_radius, loc_lat, loc_lon, res_qty_id FROM resource_location WHERE res_id = ?", (id,));
     let vec: Result<Vec<Location>, String> = catch_mysql_err(query_result);
@@ -122,7 +118,7 @@ pub fn resource(id: u64, config: State<Config>, conn: State<my::Pool>) -> Templa
     }
 
     Template::render("resource", ResourceContext {
-        types: &resource_types,
+        types: &config.resource_types,
         quantities: &config.quantities,
         resource: Some(resource)
     })
