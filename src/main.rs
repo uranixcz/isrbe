@@ -29,7 +29,6 @@ use rocket::request::FlashMessage;
 use mysql as my;
 use serde::Serialize;
 use std::fmt::Debug;
-use rocket::response::{Flash, Redirect};
 use my::prelude::FromRow;
 use locations::*;
 use resources::*;
@@ -149,7 +148,7 @@ fn rocket() -> Rocket {
             )
         }))
         .mount("/", routes![index, resources, resource, addresource_page, addresource, modifyresource,
-        addlocation,
+        addlocation, location,
         transforms])
         .mount("/static", rocket_contrib::serve::StaticFiles::from("static"))
 }
