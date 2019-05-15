@@ -71,3 +71,12 @@ pub fn location(id: u64, config: State<Config>, conn: State<my::Pool>) -> Templa
         location: Some(location)
     })
 }
+
+#[get("/deletelocation/<id>")]
+pub fn deletelocation(id: u64, conn: State<my::Pool>) -> Flash<Redirect> {
+    let query_result = conn.prep_exec("DELETE FROM resource_location WHERE res_loc_id = ?", (id,));
+    match query_result {
+        Ok(_) => Flash::success(Redirect::to("/"), "Location removed."),
+        Err(e) => Flash::error(Redirect::to("/"), e.to_string())
+    }
+}
