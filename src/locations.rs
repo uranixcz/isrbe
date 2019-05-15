@@ -63,13 +63,23 @@ pub fn location(id: u64, config: State<Config>, conn: State<my::Pool>) -> Templa
         return Template::render(ERROR_PAGE, vec.unwrap_err().to_string())
     }
     let mut location = vec.unwrap().remove(0);
-    location.unit = &config.quantities[location.unit_id as usize - 1].unit;
-    println!("{} {}", location.unit, location.unit_id);
+    location.unit = if location.unit_id == 0 { "" }
+    else { &config.quantities[location.unit_id as usize - 1].unit };
 
     Template::render("location", LocationContext {
         quantities: &config.quantities,
         location: Some(location)
     })
+}
+
+#[get("/modifylocation?<id>&<amount>&<unit>&<radius>&<lat>&<lon>")]
+pub fn modifylocation(id: u64, amount: f64, unit: u64, radius: u64, lat: f64, lon: f64, conn: State<my::Pool>) -> Flash<Redirect> {
+    let query_result = conn.prep_exec("UPDATE resource_location SET res_qty_id = ?, loc_lat = ?, loc_lon = ?, loc_radius = ?, loc_val = ? WHERE res_loc_id = ?",
+                                      (unit, lat, lon, radius, amount, id));
+    match query_result {
+        Ok(_) => Flash::success(Redirect::to("/"), "Location modified."),
+        Err(e) => Flash::error(Redirect::to("/"), e.to_string())
+    }
 }
 
 #[get("/deletelocation/<id>")]

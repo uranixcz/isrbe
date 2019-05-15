@@ -1,6 +1,6 @@
 -- MySQL dump 10.17  Distrib 10.3.14-MariaDB, for debian-linux-gnu (x86_64)
 --
--- Host: 185.25.185.22    Database: isrbe
+-- Host: 185.25.185.22    Database: isrbe2
 -- ------------------------------------------------------
 -- Server version	5.5.60-0+deb7u1
 
@@ -105,9 +105,9 @@ CREATE TABLE `resource_location` (
   `loc_lat` decimal(10,0) NOT NULL,
   `loc_lon` decimal(10,0) NOT NULL,
   `loc_radius` decimal(10,0) unsigned NOT NULL,
-  `loc_val` float NOT NULL,
+  `loc_val` double NOT NULL,
   PRIMARY KEY (`res_loc_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -116,7 +116,7 @@ CREATE TABLE `resource_location` (
 
 LOCK TABLES `resource_location` WRITE;
 /*!40000 ALTER TABLE `resource_location` DISABLE KEYS */;
-INSERT INTO `resource_location` VALUES (1,1,2,0,0,1000000,555);
+INSERT INTO `resource_location` VALUES (1,1,2,0,0,1000000,555.01),(2,1,2,0,0,1,445);
 /*!40000 ALTER TABLE `resource_location` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -209,7 +209,7 @@ CREATE TABLE `transform_line` (
   `transform_line_id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `transform_hdr_id` bigint(20) unsigned NOT NULL,
   `res_loc_id` bigint(20) unsigned NOT NULL,
-  `transform_line_val` float NOT NULL,
+  `transform_line_val` double NOT NULL,
   PRIMARY KEY (`transform_line_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -257,4 +257,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2019-05-11 20:19:32
+-- Dump completed on 2019-05-15 15:50:13

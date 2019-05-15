@@ -114,7 +114,8 @@ pub fn resource(id: u64, config: State<Config>, conn: State<my::Pool>) -> Templa
     }
     resource.locations = vec.unwrap();
     for val in resource.locations.iter_mut() {
-        val.unit = &config.quantities[val.unit_id as usize - 1].unit;
+        val.unit = if val.unit_id == 0 { "" }
+        else { &config.quantities[val.unit_id as usize - 1].unit }
     }
 
     Template::render("resource", ResourceContext {
@@ -126,7 +127,7 @@ pub fn resource(id: u64, config: State<Config>, conn: State<my::Pool>) -> Templa
 
 #[get("/modifyresource?<id>&<name>&<type_id>")]
 pub fn modifyresource(id: u64, name: String, type_id: u64, conn: State<my::Pool>) -> Flash<Redirect> {
-    let query_result = conn.prep_exec("UPDATE resource SET res_name = ?, res_type_id =? WHERE res_id = ?", (name, type_id, id));
+    let query_result = conn.prep_exec("UPDATE resource SET res_name = ?, res_type_id = ? WHERE res_id = ?", (name, type_id, id));
     match query_result {
         Ok(_) => Flash::success(Redirect::to("/"), "Resource modified."),
         Err(e) => Flash::error(Redirect::to("/"), e.to_string())
