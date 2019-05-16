@@ -45,7 +45,7 @@ enum Language {
     Czech,
 }
 
-#[derive(Serialize, Clone, Debug)]
+#[derive(Serialize, Debug)]
 pub struct ResourceType {
     id: u64,
     type_name: String,
@@ -61,6 +61,29 @@ impl FromRow for ResourceType {
         } else {
             let (id, type_name) = deconstruct.unwrap();
             Ok(ResourceType {
+                id,
+                type_name
+            })
+        }
+    }
+}
+
+#[derive(Serialize, Debug)]
+pub struct TransformType {
+    id: u64,
+    type_name: String,
+}
+impl FromRow for TransformType {
+    fn from_row(_row: my::Row) -> Self {
+        unimplemented!()
+    }
+    fn from_row_opt(row: my::Row) -> Result<Self, my::FromRowError> {
+        let deconstruct = my::from_row_opt(row);
+        if deconstruct.is_err() {
+            return Err(deconstruct.unwrap_err());
+        } else {
+            let (id, type_name) = deconstruct.unwrap();
+            Ok(TransformType {
                 id,
                 type_name
             })
@@ -95,6 +118,7 @@ impl FromRow for Quantity {
 
 pub struct Config {
     resource_types: Vec<ResourceType>,
+    transform_types: Vec<TransformType>,
     quantities: Vec<Quantity>,
 }
 
@@ -140,16 +164,19 @@ fn rocket() -> Rocket {
             let pool = my::Pool::new(db_url).unwrap();
             let resource_types: Vec<ResourceType> = catch_mysql_err(pool.prep_exec("SELECT res_type_id, res_type_name FROM resource_type", ())).unwrap();
             let quantities: Vec<Quantity> =  catch_mysql_err(pool.prep_exec("SELECT qty_id, qty_name, qty_unit FROM quantity", ())).unwrap();
+            let transform_types: Vec<TransformType> = catch_mysql_err(pool.prep_exec("SELECT transf_type_id, transf_type_name FROM transform_type", ())).unwrap();
             Ok(rocket.manage(Config {
                 resource_types,
+                transform_types,
                 quantities,
+
             })
                 .manage(pool)
             )
         }))
         .mount("/", routes![index, resources, resource, addresource_page, addresource, modifyresource,
         addlocation, location, modifylocation, deletelocation,
-        transforms])
+        transforms, addtransform_page])
         .mount("/static", rocket_contrib::serve::StaticFiles::from("static"))
 }
 
