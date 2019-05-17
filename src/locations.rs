@@ -29,7 +29,7 @@ impl<'a> FromRow for Location<'a> {
     fn from_row_opt(row: my::Row) -> Result<Self, my::FromRowError> {
         let deconstruct = my::from_row_opt(row);
         if deconstruct.is_err() {
-            return Err(deconstruct.unwrap_err());
+            Err(deconstruct.unwrap_err())
         } else {
             let (id, amount, radius, lat, lon, unit_id) = deconstruct.unwrap();
             Ok(Location {

@@ -29,7 +29,7 @@ impl<'a> FromRow for Resource<'a> {
     fn from_row_opt(row: my::Row) -> Result<Self, my::FromRowError> {
         let deconstruct = my::from_row_opt(row);
         if deconstruct.is_err() {
-            return Err(deconstruct.unwrap_err());
+            Err(deconstruct.unwrap_err())
         } else {
             let (id, name, type_id) = deconstruct.unwrap();
             Ok(Resource {
@@ -60,7 +60,7 @@ pub fn resources(conn: State<my::Pool>) -> Template {
         fn from_row_opt(row: my::Row) -> Result<Self, my::FromRowError> {
             let deconstruct = my::from_row_opt(row);
             if deconstruct.is_err() {
-                return Err(deconstruct.unwrap_err());
+                Err(deconstruct.unwrap_err())
             } else {
                 let (id, name, type_id, locations, quantity) = deconstruct.unwrap();
                 Ok(Resource {
@@ -84,7 +84,7 @@ pub fn resources(conn: State<my::Pool>) -> Template {
 }
 
 #[get("/addresource")]
-pub fn addresource_page<'a>(config: State<Config>) -> Template {
+pub fn addresource_page(config: State<Config>) -> Template {
     Template::render("resource", ResourceContext { types: &config.resource_types, quantities: &Vec::new(), resource: None})
 }
 

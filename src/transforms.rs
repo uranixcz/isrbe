@@ -27,7 +27,7 @@ impl FromRow for Transform {
     fn from_row_opt(row: my::Row) -> Result<Self, my::FromRowError> {
         let deconstruct = my::from_row_opt(row);
         if deconstruct.is_err() {
-            return Err(deconstruct.unwrap_err());
+            Err(deconstruct.unwrap_err())
         } else {
             let (id, type_id, refer, lines) = deconstruct.unwrap();
             Ok(Transform {
@@ -52,6 +52,6 @@ pub fn transforms(conn: State<my::Pool>) -> Template {
 }
 
 #[get("/addtransform")]
-pub fn addtransform_page<'a>(config: State<Config>) -> Template {
+pub fn addtransform_page(config: State<Config>) -> Template {
     Template::render("transform", TransformContext { types: &config.transform_types, transform: None})
 }

@@ -38,7 +38,7 @@ mod locations;
 mod resources;
 mod transforms;
 
-const ERROR_PAGE: &'static str = "error";
+const ERROR_PAGE: &str = "error";
 
 enum Language {
     English,
@@ -57,7 +57,7 @@ impl FromRow for ResourceType {
     fn from_row_opt(row: my::Row) -> Result<Self, my::FromRowError> {
         let deconstruct = my::from_row_opt(row);
         if deconstruct.is_err() {
-            return Err(deconstruct.unwrap_err());
+            Err(deconstruct.unwrap_err())
         } else {
             let (id, type_name) = deconstruct.unwrap();
             Ok(ResourceType {
@@ -80,7 +80,7 @@ impl FromRow for TransformType {
     fn from_row_opt(row: my::Row) -> Result<Self, my::FromRowError> {
         let deconstruct = my::from_row_opt(row);
         if deconstruct.is_err() {
-            return Err(deconstruct.unwrap_err());
+            Err(deconstruct.unwrap_err())
         } else {
             let (id, type_name) = deconstruct.unwrap();
             Ok(TransformType {
@@ -104,7 +104,7 @@ impl FromRow for Quantity {
     fn from_row_opt(row: my::Row) -> Result<Self, my::FromRowError> {
         let deconstruct = my::from_row_opt(row);
         if deconstruct.is_err() {
-            return Err(deconstruct.unwrap_err());
+            Err(deconstruct.unwrap_err())
         } else {
             let (id, name, unit) = deconstruct.unwrap();
             Ok(Quantity {
