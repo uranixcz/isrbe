@@ -5,11 +5,13 @@ use mysql as my;
 use my::prelude::FromRow;
 use std::fs;
 use crate::{catch_mysql_err, ERROR_PAGE, Config, TransformType};
+use crate::locations::Location;
 
 #[derive(Serialize)]
 struct TransformContext<'a> {
     types: &'a Vec<TransformType>,
     transform: Option<Transform<'a>>,
+    locations: Vec<Location<'a>>,
 }
 
 #[derive(Serialize, Debug)]
@@ -18,7 +20,7 @@ struct Transform<'a> {
     type_id: u64,
     type_name: &'a str,
     refer: String,
-    lines: Vec<TransformLine>,
+    lines: Vec<TransformLine<'a>>,
 }
 impl<'a> FromRow for Transform<'a> {
     fn from_row(_row: my::Row) -> Self {
@@ -41,14 +43,12 @@ impl<'a> FromRow for Transform<'a> {
     }
 }
 #[derive(Serialize, Debug)]
-struct TransformLine {
+struct TransformLine<'a> {
     id: u64,
     amount: f64,
-    lat: f64,
-    lon: f64,
-    radius: u64,
+    location: Location<'a>,
 }
-impl FromRow for TransformLine {
+impl<'a> FromRow for TransformLine<'a> {
     fn from_row(_row: my::Row) -> Self {
         unimplemented!()
     }
@@ -57,13 +57,20 @@ impl FromRow for TransformLine {
         if deconstruct.is_err() {
             Err(deconstruct.unwrap_err())
         } else {
-            let (id, amount, lat, lon, radius) = deconstruct.unwrap();
+            let (id, amount, loc_id, loc_amount, lat, lon, radius, unit_id, res_name) = deconstruct.unwrap();
             Ok(TransformLine {
                 id,
                 amount,
-                lat,
-                lon,
-                radius,
+                location: Location {
+                    id: loc_id,
+                    amount: loc_amount,
+                    radius,
+                    lat,
+                    lon,
+                    unit_id,
+                    unit: "",
+                    res_name,
+                }
             })
         }
     }
@@ -109,7 +116,7 @@ pub fn transforms(conn: State<my::Pool>) -> Template {
 
 #[get("/addtransform")]
 pub fn addtransform_page(config: State<Config>) -> Template {
-    Template::render("transform", TransformContext { types: &config.transform_types, transform: None})
+    Template::render("transform", TransformContext { types: &config.transform_types, transform: None, locations: vec![] })
 }
 
 #[get("/addtransform?<refer>&<type_id>")]
@@ -131,17 +138,35 @@ pub fn transform(id: u64, config: State<Config>, conn: State<my::Pool>) -> Templ
     let mut transform = vec.unwrap().remove(0);
     transform.type_name = &config.transform_types[(transform.type_id - 1) as usize].type_name;
 
-    query_result = conn.prep_exec("SELECT transform_line_id, transform_line_val, location.lat, location.lon, resource_location.loc_radius FROM transform_line \
+    query_result = conn.prep_exec("SELECT transform_line_id, transform_line_val, 0, 0.0, location.lat, location.lon, resource_location.loc_radius, res_qty_id, resource.res_name FROM transform_line \
     JOIN resource_location ON transform_line.res_loc_id = resource_location.res_loc_id \
-    JOIN location ON resource_location.loc_id = location.id WHERE transform_hdr_id = ?", (id,));
+    JOIN location ON resource_location.loc_id = location.id \
+    JOIN resource ON resource_location.res_loc_id = resource.res_id WHERE transform_hdr_id = ?", (id,));
     let vec: Result<Vec<TransformLine>, String> = catch_mysql_err(query_result);
     if vec.is_err() {
         return Template::render(ERROR_PAGE, vec.unwrap_err().to_string())
     }
     transform.lines = vec.unwrap();
+    for line in transform.lines.iter_mut() {
+        line.location.unit = &config.quantities[line.location.unit_id as usize - 1].unit
+    }
+
+    query_result = conn.prep_exec("SELECT res_loc_id, loc_val, loc_radius, location.lat, location.lon, res_qty_id, resource.res_name FROM resource_location \
+    JOIN resource ON resource.res_id = resource_location.res_id \
+    JOIN location ON location.id = loc_id", ());
+    let vec: Result<Vec<Location>, String> = catch_mysql_err(query_result);
+    if vec.is_err() {
+        return Template::render(ERROR_PAGE, vec.unwrap_err().to_string())
+    }
+    let mut locations = vec.unwrap();
+    for location in locations.iter_mut() {
+        location.unit = if location.unit_id == 0 { "" }
+        else { &config.quantities[location.unit_id as usize - 1].unit }
+    }
 
     Template::render("transform", TransformContext {
         types: &config.transform_types,
         transform: Some(transform),
+        locations,
     })
 }

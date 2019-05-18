@@ -15,13 +15,14 @@ struct LocationContext<'a> {
 
 #[derive(Serialize, Debug)]
 pub struct Location<'a> {
-    id: u64,
-    amount: f64,
-    radius: u64,
-    lat: f64,
-    lon: f64,
+    pub id: u64,
+    pub amount: f64,
+    pub radius: u64,
+    pub lat: f64,
+    pub lon: f64,
     pub unit_id: u64,
     pub unit: &'a str,
+    pub res_name: String,
 }
 impl<'a> FromRow for Location<'a> {
     fn from_row(_row: my::Row) -> Self {
@@ -32,7 +33,7 @@ impl<'a> FromRow for Location<'a> {
         if deconstruct.is_err() {
             Err(deconstruct.unwrap_err())
         } else {
-            let (id, amount, radius, lat, lon, unit_id) = deconstruct.unwrap();
+            let (id, amount, radius, lat, lon, unit_id, res_name) = deconstruct.unwrap();
             Ok(Location {
                 id,
                 amount,
@@ -40,7 +41,8 @@ impl<'a> FromRow for Location<'a> {
                 lat,
                 lon,
                 unit_id,
-                unit: ""
+                unit: "",
+                res_name,
             })
         }
     }
@@ -82,7 +84,7 @@ pub fn addlocation(resource_id: u64, amount: f64, unit: u64, radius: u64, locati
 
 #[get("/location/<id>")]
 pub fn location(id: u64, config: State<Config>, conn: State<my::Pool>) -> Template {
-    let mut query_result = conn.prep_exec("SELECT res_loc_id, loc_val, loc_radius, location.lat, location.lon, res_qty_id \
+    let mut query_result = conn.prep_exec("SELECT res_loc_id, loc_val, loc_radius, location.lat, location.lon, res_qty_id, \"\" \
     FROM resource_location JOIN location ON loc_id = location.id WHERE res_loc_id = ?", (id,));
     let vec: Result<Vec<Location>, String> = catch_mysql_err(query_result);
     if vec.is_err() {

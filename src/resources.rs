@@ -108,16 +108,16 @@ pub fn resource(id: u64, config: State<Config>, conn: State<my::Pool>) -> Templa
     let mut resource = vec.unwrap().remove(0);
     resource.type_name = &config.resource_types[(resource.type_id - 1) as usize].type_name;
 
-    query_result = conn.prep_exec("SELECT res_loc_id, loc_val, loc_radius, location.lat, location.lon, res_qty_id \
+    query_result = conn.prep_exec("SELECT res_loc_id, loc_val, loc_radius, location.lat, location.lon, res_qty_id, \"\" \
     FROM resource_location JOIN location ON loc_id = location.id WHERE res_id = ?", (id,));
     let vec: Result<Vec<Location>, String> = catch_mysql_err(query_result);
     if vec.is_err() {
         return Template::render(ERROR_PAGE, vec.unwrap_err().to_string())
     }
     resource.locations = vec.unwrap();
-    for val in resource.locations.iter_mut() {
-        val.unit = if val.unit_id == 0 { "" }
-        else { &config.quantities[val.unit_id as usize - 1].unit }
+    for location in resource.locations.iter_mut() {
+        location.unit = if location.unit_id == 0 { "" }
+        else { &config.quantities[location.unit_id as usize - 1].unit }
     }
     query_result = conn.prep_exec("SELECT id, lat, lon FROM location", ());
     let vec: Result<Vec<Coordinates>, String> = catch_mysql_err(query_result);

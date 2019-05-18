@@ -32,27 +32,14 @@
                     <td><input type="number" id="amount" name="amount" min="0.01" step="0.01" required /></td>
                 </tr>
                 <tr>
-                    <td><label for="unit">Unit</label></td>
+                    <td><label for="location">Location</label></td>
                     <td>
-                        <select name="unit" id="unit" required>
-                            <option value="0">Piece</option>
-                            {{#each quantities}}
-                                <option value="{{id}}">{{name}} ({{unit}})</option>
+                        <select name="location" id="location" required>
+                            {{#each locations}}
+                                <option value="{{id}}">{{res_name}} {{amount}}{{unit}} {{lat}} {{lon}} {{radius}}m</option>
                             {{/each}}
                         </select>
                     </td>
-                </tr>
-                <tr>
-                    <td><label for="radius">Radius</label></td>
-                    <td><input type="number" id="radius" name="radius" min="0" required /></td>
-                </tr>
-                <tr>
-                    <td><label for="lat">Latitude</label></td>
-                    <td><input type="number" id="lat" name="lat" min="-90" max="90" step="0.01" required /></td>
-                </tr>
-                <tr>
-                    <td><label for="lon">Longitude</label></td>
-                    <td><input type="number" id="lon" name="lon" min="-180" max="180" step="0.01" required /></td>
                 </tr>
                 <tr>
                     <td><input type="hidden" name="transform_id" value="{{transform.id}}"></td>
@@ -62,15 +49,16 @@
         </form>
         <br>
         <table>
-            <tr><th colspan="6">List of lines</th></tr>
-            <tr><th>ID</th><th>Amount</th><th>Radius</th><th>Latitude</th><th>Longitude</th><th>Operation</th></tr>
+            <tr><th colspan="7">List of lines</th></tr>
+            <tr><th>ID</th><th>Resource</th><th>Amount</th><th>Latitude</th><th>Longitude</th><th>Radius</th><th>Operation</th></tr>
             {{#each transform.lines}}
                 <tr>
                     <td>{{id}}</td>
-                    <td>{{amount}} {{unit}}</td>
-                    <td>{{radius}}</td>
-                    <td>{{lat}}</td>
-                    <td>{{lon}}</td>
+                    <td>{{location.res_name}}</td>
+                    <td>{{amount}}{{location.unit}}</td>
+                    <td>{{location.lat}}</td>
+                    <td>{{location.lon}}</td>
+                    <td>{{location.radius}}m</td>
                     <td>Edit Delete</td>
                 </tr>
             {{/each}}
