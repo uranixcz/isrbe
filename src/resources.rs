@@ -5,13 +5,14 @@ use mysql as my;
 use my::prelude::FromRow;
 use std::fs;
 use crate::{catch_mysql_err, ERROR_PAGE, Config, ResourceType, Quantity};
-use crate::locations::Location;
+use crate::locations::{Location, Coordinates};
 
 #[derive(Serialize)]
 struct ResourceContext<'a> {
     types: &'a Vec<ResourceType>,
     quantities: &'a Vec<Quantity>,
     resource: Option<Resource<'a>>,
+    coordinates: Vec<Coordinates>,
 }
 
 #[derive(Serialize, Debug)]
@@ -85,7 +86,7 @@ pub fn resources(conn: State<my::Pool>) -> Template {
 
 #[get("/addresource")]
 pub fn addresource_page(config: State<Config>) -> Template {
-    Template::render("resource", ResourceContext { types: &config.resource_types, quantities: &Vec::new(), resource: None})
+    Template::render("resource", ResourceContext { types: &config.resource_types, quantities: &Vec::new(), resource: None, coordinates: Vec::new() })
 }
 
 #[get("/addresource?<name>&<type_id>")]
@@ -107,7 +108,8 @@ pub fn resource(id: u64, config: State<Config>, conn: State<my::Pool>) -> Templa
     let mut resource = vec.unwrap().remove(0);
     resource.type_name = &config.resource_types[(resource.type_id - 1) as usize].type_name;
 
-    query_result = conn.prep_exec("SELECT res_loc_id, loc_val, loc_radius, loc_lat, loc_lon, res_qty_id FROM resource_location WHERE res_id = ?", (id,));
+    query_result = conn.prep_exec("SELECT res_loc_id, loc_val, loc_radius, location.lat, location.lon, res_qty_id \
+    FROM resource_location JOIN location ON loc_id = location.id WHERE res_id = ?", (id,));
     let vec: Result<Vec<Location>, String> = catch_mysql_err(query_result);
     if vec.is_err() {
         return Template::render(ERROR_PAGE, vec.unwrap_err().to_string())
@@ -117,11 +119,17 @@ pub fn resource(id: u64, config: State<Config>, conn: State<my::Pool>) -> Templa
         val.unit = if val.unit_id == 0 { "" }
         else { &config.quantities[val.unit_id as usize - 1].unit }
     }
+    query_result = conn.prep_exec("SELECT id, lat, lon FROM location", ());
+    let vec: Result<Vec<Coordinates>, String> = catch_mysql_err(query_result);
+    if vec.is_err() {
+        return Template::render(ERROR_PAGE, vec.unwrap_err().to_string())
+    }
 
     Template::render("resource", ResourceContext {
         types: &config.resource_types,
         quantities: &config.quantities,
-        resource: Some(resource)
+        resource: Some(resource),
+        coordinates: vec.unwrap(),
     })
 }
 

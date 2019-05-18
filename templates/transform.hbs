@@ -2,11 +2,11 @@
     <form action="{{#if transform}}/modifytransform{{else}}/addtransform{{/if}}" method="get" accept-charset="utf-8">
         <table>
             <tr>
-                <td><label for="name">Resource name</label></td>
-                <td><input type="text" name="name" id="name" value="{{transform.name}}" required autofocus/></td>
+                <td><label for="refer">Text</label></td>
+                <td><input type="text" name="refer" id="refer" value="{{transform.refer}}" required autofocus/></td>
             </tr>
             <tr>
-                <td><label for="type_id">Resource type</label></td>
+                <td><label for="type_id">Transformation type</label></td>
                 <td>
                     <select name="type_id" id="type_id" required>
                         {{#if transform}}<option value="{{transform.type_id}}" selected>{{transform.type_name}}</option>{{/if}}
@@ -18,7 +18,7 @@
             </tr>
             <tr>
                 <td>{{#if transform}}<input type="hidden" name="id" value="{{transform.id}}"/>{{/if}}</td>
-                <td><input type="submit" value="Submit" /></td>
+                <td><input type="submit" value="Submit" disabled /></td>
             </tr>
         </table>
     </form>
@@ -56,7 +56,7 @@
                 </tr>
                 <tr>
                     <td><input type="hidden" name="transform_id" value="{{transform.id}}"></td>
-                    <td><input type="submit" value="Submit" /></td>
+                    <td><input type="submit" value="Submit" disabled /></td>
                 </tr>
             </table>
         </form>
@@ -68,10 +68,10 @@
                 <tr>
                     <td>{{id}}</td>
                     <td>{{amount}} {{unit}}</td>
-                    <td>{{radius}} m</td>
+                    <td>{{radius}}</td>
                     <td>{{lat}}</td>
                     <td>{{lon}}</td>
-                    <td><a href="/line/{{id}}">Edit</a> <a href="/deleteline/{{id}}">Delete</a></td>
+                    <td>Edit Delete</td>
                 </tr>
             {{/each}}
         </table>
