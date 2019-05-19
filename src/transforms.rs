@@ -5,13 +5,13 @@ use mysql as my;
 use my::prelude::FromRow;
 use std::fs;
 use crate::{catch_mysql_err, ERROR_PAGE, Config, TransformType};
-use crate::locations::Location;
+use crate::locations::ResLocation;
 
 #[derive(Serialize)]
 struct TransformContext<'a> {
     types: &'a Vec<TransformType>,
     transform: Option<Transform<'a>>,
-    locations: Vec<Location<'a>>,
+    locations: Vec<ResLocation<'a>>,
 }
 
 #[derive(Serialize, Debug)]
@@ -46,7 +46,7 @@ impl<'a> FromRow for Transform<'a> {
 struct TransformLine<'a> {
     id: u64,
     amount: f64,
-    location: Location<'a>,
+    location: ResLocation<'a>,
 }
 impl<'a> FromRow for TransformLine<'a> {
     fn from_row(_row: my::Row) -> Self {
@@ -61,7 +61,7 @@ impl<'a> FromRow for TransformLine<'a> {
             Ok(TransformLine {
                 id,
                 amount,
-                location: Location {
+                location: ResLocation {
                     id: loc_id,
                     amount: loc_amount,
                     radius,
@@ -80,7 +80,7 @@ impl<'a> FromRow for TransformLine<'a> {
 struct TransformLineContext<'a> {
     //types: &'a Vec<TransformType>,
     line: Option<TransformLine<'a>>,
-    locations: Vec<Location<'a>>,
+    locations: Vec<ResLocation<'a>>,
 }
 
 #[get("/transforms")]
@@ -161,7 +161,7 @@ pub fn transform(id: u64, config: State<Config>, conn: State<my::Pool>) -> Templ
     query_result = conn.prep_exec("SELECT res_loc_id, loc_val, loc_radius, location.lat, location.lon, res_qty_id, resource.res_name FROM resource_location \
     JOIN resource ON resource.res_id = resource_location.res_id \
     JOIN location ON location.id = loc_id", ());
-    let vec: Result<Vec<Location>, String> = catch_mysql_err(query_result);
+    let vec: Result<Vec<ResLocation>, String> = catch_mysql_err(query_result);
     if vec.is_err() {
         return Template::render(ERROR_PAGE, vec.unwrap_err().to_string())
     }
@@ -214,7 +214,7 @@ pub fn line(id: u64, config: State<Config>, conn: State<my::Pool>) -> Template {
     query_result = conn.prep_exec("SELECT res_loc_id, loc_val, loc_radius, location.lat, location.lon, res_qty_id, resource.res_name FROM resource_location \
     JOIN resource ON resource.res_id = resource_location.res_id \
     JOIN location ON location.id = loc_id", ());
-    let vec: Result<Vec<Location>, String> = catch_mysql_err(query_result);
+    let vec: Result<Vec<ResLocation>, String> = catch_mysql_err(query_result);
     if vec.is_err() {
         return Template::render(ERROR_PAGE, vec.unwrap_err().to_string())
     }

@@ -1,0 +1,42 @@
+{{#*inline "page"}}
+    <form action="/modifylocation" method="get" accept-charset="utf-8">
+        <table>
+            <tr><th colspan="2">Modify resource location</th></tr>
+            <tr>
+                <td><label for="amount">Amount</label></td>
+                <td><input type="number" id="amount" name="amount" min="0" step="0.01" value="{{location.amount}}" required /></td>
+            </tr>
+            <tr>
+                <td><label for="unit">Unit</label></td>
+                <td>
+                    <select name="unit" id="unit" required>
+                        <option value="{{location.unit_id}}" selected>Current ({{location.unit}})</option>
+                        <option value="0">Piece</option>
+                        {{#each quantities}}
+                            <option value="{{id}}">{{name}} ({{unit}})</option>
+                        {{/each}}
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td><label for="radius">Radius</label></td>
+                <td><input type="number" id="radius" name="radius" min="0" value="{{location.radius}}" required /></td>
+            </tr>
+            <tr>
+                <td><label for="location">Location</label></td>
+                <td>
+                    <select name="location" id="location" required>
+                        {{#each coordinates}}
+                            <option value="{{id}}">lat:{{lat}} lon:{{lon}}</option>
+                        {{/each}}
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td><input type="hidden" name="id" value="{{location.id}}"></td>
+                <td><input type="submit" value="Submit" /></td>
+            </tr>
+        </table>
+    </form>
+{{/inline}}
+{{> layout}}

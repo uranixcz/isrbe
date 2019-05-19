@@ -175,7 +175,8 @@ fn rocket() -> Rocket {
             )
         }))
         .mount("/", routes![index, resources, resource, addresource_page, addresource, modifyresource,
-        addlocation, location, modifylocation,
+        addreslocation, reslocation, modifyreslocation,
+        locations, addlocation_page, addlocation,
         transforms, transform, addtransform_page, addtransform, modifytransform, addline, line, modifyline, deleteline])
         .mount("/static", rocket_contrib::serve::StaticFiles::from("static"))
 }

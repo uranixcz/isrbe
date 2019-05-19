@@ -5,7 +5,7 @@ use mysql as my;
 use my::prelude::FromRow;
 use std::fs;
 use crate::{catch_mysql_err, ERROR_PAGE, Config, ResourceType, Quantity};
-use crate::locations::{Location, Coordinates};
+use crate::locations::{ResLocation, Coordinates};
 
 #[derive(Serialize)]
 struct ResourceContext<'a> {
@@ -21,7 +21,7 @@ struct Resource <'a>{
     name: String,
     type_id: u64,
     type_name: &'a str,
-    locations: Vec<Location<'a>>,
+    locations: Vec<ResLocation<'a>>,
 }
 impl<'a> FromRow for Resource<'a> {
     fn from_row(_row: my::Row) -> Self {
@@ -110,7 +110,7 @@ pub fn resource(id: u64, config: State<Config>, conn: State<my::Pool>) -> Templa
 
     query_result = conn.prep_exec("SELECT res_loc_id, loc_val, loc_radius, location.lat, location.lon, res_qty_id, \"\" \
     FROM resource_location JOIN location ON loc_id = location.id WHERE res_id = ?", (id,));
-    let vec: Result<Vec<Location>, String> = catch_mysql_err(query_result);
+    let vec: Result<Vec<ResLocation>, String> = catch_mysql_err(query_result);
     if vec.is_err() {
         return Template::render(ERROR_PAGE, vec.unwrap_err().to_string())
     }
