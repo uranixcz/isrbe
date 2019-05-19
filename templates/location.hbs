@@ -1,7 +1,7 @@
 {{#*inline "page"}}
     <form action="/modifylocation" method="get" accept-charset="utf-8">
         <table>
-            <tr><th colspan="2">Modify location</th></tr>
+            <tr><th colspan="2">Modify resource location</th></tr>
             <tr>
                 <td><label for="amount">Amount</label></td>
                 <td><input type="number" id="amount" name="amount" min="0" step="0.01" value="{{location.amount}}" required /></td>
@@ -23,7 +23,7 @@
                 <td><input type="number" id="radius" name="radius" min="0" value="{{location.radius}}" required /></td>
             </tr>
             <tr>
-                <td><label for="location">Coordinates</label></td>
+                <td><label for="location">Location</label></td>
                 <td>
                     <select name="location" id="location" required>
                         {{#each coordinates}}

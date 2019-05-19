@@ -18,7 +18,7 @@
             </tr>
             <tr>
                 <td>{{#if transform}}<input type="hidden" name="id" value="{{transform.id}}"/>{{/if}}</td>
-                <td><input type="submit" value="Submit" disabled /></td>
+                <td><input type="submit" value="Submit" /></td>
             </tr>
         </table>
     </form>
@@ -29,7 +29,7 @@
                 <tr><th colspan="2">Add line</th></tr>
                 <tr>
                     <td><label for="amount">Amount</label></td>
-                    <td><input type="number" id="amount" name="amount" min="0.01" step="0.01" required /></td>
+                    <td><input type="number" id="amount" name="amount" step="0.01" required /></td>
                 </tr>
                 <tr>
                     <td><label for="location">Location</label></td>
@@ -43,7 +43,7 @@
                 </tr>
                 <tr>
                     <td><input type="hidden" name="transform_id" value="{{transform.id}}"></td>
-                    <td><input type="submit" value="Submit" disabled /></td>
+                    <td><input type="submit" value="Submit" /></td>
                 </tr>
             </table>
         </form>
@@ -59,7 +59,7 @@
                     <td>{{location.lat}}</td>
                     <td>{{location.lon}}</td>
                     <td>{{location.radius}}m</td>
-                    <td>Edit Delete</td>
+                    <td><a href="/line/{{id}}">Edit</a> <a href="/deleteline/{{id}}">Delete</a></td>
                 </tr>
             {{/each}}
         </table>

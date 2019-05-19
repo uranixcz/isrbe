@@ -1,0 +1,26 @@
+{{#*inline "page"}}
+    <form action="/modifyline" method="get" accept-charset="utf-8">
+        <table>
+            <tr><th colspan="2">Modify line</th></tr>
+            <tr>
+                <td><label for="amount">Amount</label></td>
+                <td><input type="number" id="amount" name="amount" step="0.01" value="{{line.amount}}" required /></td>
+            </tr>
+            <tr>
+                <td><label for="location">Location</label></td>
+                <td>
+                    <select name="location" id="location" required>
+                        {{#each locations}}
+                            <option value="{{id}}">{{res_name}} {{amount}}{{unit}} {{lat}} {{lon}} {{radius}}m</option>
+                        {{/each}}
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td><input type="hidden" name="id" value="{{line.id}}"></td>
+                <td><input type="submit" value="Submit" /></td>
+            </tr>
+        </table>
+    </form>
+{{/inline}}
+{{> layout}}
