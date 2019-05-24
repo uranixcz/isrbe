@@ -155,7 +155,8 @@ pub fn transform(id: u64, config: State<Config>, conn: State<my::Pool>) -> Templ
     }
     transform.lines = vec.unwrap();
     for line in transform.lines.iter_mut() {
-        line.location.unit = &config.quantities[line.location.unit_id as usize - 1].unit
+        line.location.unit = if line.location.unit_id == 0 { "" }
+        else { &config.quantities[line.location.unit_id as usize - 1].unit }
     }
 
     query_result = conn.prep_exec("SELECT res_loc_id, loc_val, loc_radius, location.lat, location.lon, res_qty_id, resource.res_name FROM resource_location \
@@ -189,7 +190,27 @@ pub fn modifytransform(id: u64, refer: String, type_id: u64, conn: State<my::Poo
 
 #[get("/addline?<transform_id>&<amount>&<location>")]
 pub fn addline(transform_id: u64, amount: f64, location: u64, conn: State<my::Pool>) -> Flash<Redirect> {
-    let query_result = conn.prep_exec("INSERT INTO transform_line (transform_hdr_id, res_loc_id, transform_line_val) VALUES (?, ?, ?)",
+    if amount == 0.0 {
+        return Flash::error(Redirect::to("/"), "Line cannot have 0 amount.")
+    }
+    // get original resource amount at location
+    let orig_value: f64 = match conn.first_exec("SELECT loc_val FROM resource_location WHERE res_loc_id = ?", (location,)) {
+        Ok(Some(row)) => row.get(0).unwrap(),
+        Ok(None) => return Flash::error(Redirect::to("/"), "No such resource location."),
+        Err(e) => return Flash::error(Redirect::to("/"), e.to_string()),
+    };
+    // test for negative amount of resource at location
+    let new_val = orig_value + amount;
+    if new_val < 0.0 {
+        return Flash::error(Redirect::to("/"), "Amount at location must not be negative.")
+    }
+    // update amount at location
+    let mut query_result = conn.prep_exec("UPDATE resource_location SET loc_val = loc_val + ? WHERE res_loc_id = ?", (amount, location));
+    if query_result.is_err() {
+        return Flash::error(Redirect::to("/"), query_result.unwrap_err().to_string());
+    }
+
+    query_result = conn.prep_exec("INSERT INTO transform_line (transform_hdr_id, res_loc_id, transform_line_val) VALUES (?, ?, ?)",
                                       (transform_id, location, amount));
     match query_result {
         Ok(_) => Flash::success(Redirect::to("/"), "Transform line added."),
@@ -237,7 +258,19 @@ pub fn modifyline(id: u64, amount: f64, location: u64, conn: State<my::Pool>) ->
 
 #[get("/deleteline/<id>")]
 pub fn deleteline(id: u64, conn: State<my::Pool>) -> Flash<Redirect> {
-    let query_result = conn.prep_exec("DELETE FROM transform_line WHERE transform_line_id = ?", (id,));
+    // get location and amount
+    let (amount, location): (f64, u64) = match conn.first_exec("SELECT transform_line_val, res_loc_id FROM transform_line WHERE transform_line_id = ?", (id,)) {
+        Ok(Some(row)) => (row.get(0).unwrap(), row.get(1).unwrap()),
+        Ok(None) => return Flash::error(Redirect::to("/"), "No such transformation line."),
+        Err(e) => return Flash::error(Redirect::to("/"), e.to_string()),
+    };
+    // update amount at location
+    let mut query_result = conn.prep_exec("UPDATE resource_location SET loc_val = loc_val - ? WHERE res_loc_id = ?", (amount, location));
+    if query_result.is_err() {
+        return Flash::error(Redirect::to("/"), query_result.unwrap_err().to_string());
+    }
+
+    query_result = conn.prep_exec("DELETE FROM transform_line WHERE transform_line_id = ?", (id,));
     match query_result {
         Ok(_) => Flash::success(Redirect::to("/"), "Transform line removed."),
         Err(e) => Flash::error(Redirect::to("/"), e.to_string())
