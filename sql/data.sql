@@ -17,12 +17,12 @@ CREATE TABLE `location` (
   `lat` decimal(10,7) NOT NULL,
   `lon` decimal(10,7) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 LOCK TABLES `location` WRITE;
 /*!40000 ALTER TABLE `location` DISABLE KEYS */;
-INSERT INTO `location` VALUES (1,0.0000000,0.0000000);
+INSERT INTO `location` VALUES (1,0.0000000,0.0000000),(2,0.0017000,0.0008000);
 /*!40000 ALTER TABLE `location` ENABLE KEYS */;
 UNLOCK TABLES;
 DROP TABLE IF EXISTS `quantity`;
@@ -66,12 +66,12 @@ CREATE TABLE `resource` (
   `res_name` varchar(100) COLLATE utf8_unicode_ci NOT NULL,
   `res_type_id` bigint(20) unsigned NOT NULL,
   PRIMARY KEY (`res_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 LOCK TABLES `resource` WRITE;
 /*!40000 ALTER TABLE `resource` DISABLE KEYS */;
-INSERT INTO `resource` VALUES (1,'brambor',2),(2,'hranol dřevěný',4),(3,'hřebík ocelový',4),(4,'abcdefg',3),(5,'acqacq',1),(6,'acqacq3',2);
+INSERT INTO `resource` VALUES (1,'brambor',4),(2,'hranol dřevěný',4),(3,'hřebík ocelový',4),(4,'water',1),(5,'acqacq',1),(6,'acqacq3',2),(8,'Flint',1),(9,'flour',1),(10,'pizza',4);
 /*!40000 ALTER TABLE `resource` ENABLE KEYS */;
 UNLOCK TABLES;
 DROP TABLE IF EXISTS `resource_location`;
@@ -80,17 +80,17 @@ DROP TABLE IF EXISTS `resource_location`;
 CREATE TABLE `resource_location` (
   `res_loc_id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `res_id` bigint(20) unsigned NOT NULL COMMENT 'pridano MM',
-  `res_qty_id` bigint(20) unsigned NOT NULL COMMENT 'qty_id',
+  `qty_id` bigint(20) unsigned NOT NULL COMMENT 'prejmenovano z res_qty_id',
   `loc_id` bigint(20) unsigned NOT NULL,
   `loc_radius` decimal(10,0) unsigned NOT NULL,
   `loc_val` double NOT NULL,
   PRIMARY KEY (`res_loc_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 LOCK TABLES `resource_location` WRITE;
 /*!40000 ALTER TABLE `resource_location` DISABLE KEYS */;
-INSERT INTO `resource_location` VALUES (1,1,2,1,1000000,555.01),(2,1,2,1,1,445),(4,1,0,1,0,0.01);
+INSERT INTO `resource_location` VALUES (1,1,2,1,0,555),(2,1,2,1,1,445),(4,1,0,1,0,0),(5,9,2,1,0,0),(6,10,0,1,0,1);
 /*!40000 ALTER TABLE `resource_location` ENABLE KEYS */;
 UNLOCK TABLES;
 DROP TABLE IF EXISTS `resource_quantity`;
@@ -136,12 +136,12 @@ CREATE TABLE `transform_hdr` (
   `transform_type_id` bigint(20) unsigned NOT NULL,
   `transform_ref` varchar(100) COLLATE utf8_unicode_ci NOT NULL,
   PRIMARY KEY (`transform_hdr_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 LOCK TABLES `transform_hdr` WRITE;
 /*!40000 ALTER TABLE `transform_hdr` DISABLE KEYS */;
-INSERT INTO `transform_hdr` VALUES (1,3,'???'),(2,1,'bla');
+INSERT INTO `transform_hdr` VALUES (1,3,'??'),(2,1,'bla'),(3,1,'I would like a Pizza please');
 /*!40000 ALTER TABLE `transform_hdr` ENABLE KEYS */;
 UNLOCK TABLES;
 DROP TABLE IF EXISTS `transform_line`;
@@ -153,12 +153,12 @@ CREATE TABLE `transform_line` (
   `res_loc_id` bigint(20) unsigned NOT NULL,
   `transform_line_val` double NOT NULL,
   PRIMARY KEY (`transform_line_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 LOCK TABLES `transform_line` WRITE;
 /*!40000 ALTER TABLE `transform_line` DISABLE KEYS */;
-INSERT INTO `transform_line` VALUES (1,1,1,1);
+INSERT INTO `transform_line` VALUES (6,1,1,-0.01),(9,3,5,-1000),(10,3,6,1);
 /*!40000 ALTER TABLE `transform_line` ENABLE KEYS */;
 UNLOCK TABLES;
 DROP TABLE IF EXISTS `transform_type`;

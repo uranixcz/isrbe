@@ -24,12 +24,12 @@
     </form>
     {{#if resource}}
         <br>
-        <form action="/addlocation" method="get" accept-charset="utf-8">
+        <form action="/addreslocation" method="get" accept-charset="utf-8">
             <table>
                 <tr><th colspan="2">Add resource location</th></tr>
                 <tr>
                     <td><label for="amount">Amount</label></td>
-                    <td><input type="number" id="amount" name="amount" min="0.01" step="0.01" required /></td>
+                    <td><input type="number" id="amount" name="amount" min="0" step="0.01" required /></td>
                 </tr>
                 <tr>
                     <td><label for="unit">Unit</label></td>

@@ -145,7 +145,7 @@ pub fn transform(id: u64, config: State<Config>, conn: State<my::Pool>) -> Templ
     let mut transform = vec.unwrap().remove(0);
     transform.type_name = &config.transform_types[(transform.type_id - 1) as usize].type_name;
 
-    query_result = conn.prep_exec("SELECT transform_line_id, transform_line_val, 0, 0.0, location.lat, location.lon, resource_location.loc_radius, res_qty_id, resource.res_name FROM transform_line \
+    query_result = conn.prep_exec("SELECT transform_line_id, transform_line_val, 0, 0.0, location.lat, location.lon, resource_location.loc_radius, qty_id, resource.res_name FROM transform_line \
     JOIN resource_location ON transform_line.res_loc_id = resource_location.res_loc_id \
     JOIN location ON resource_location.loc_id = location.id \
     JOIN resource ON resource_location.res_id = resource.res_id WHERE transform_hdr_id = ?", (id,));
@@ -159,7 +159,7 @@ pub fn transform(id: u64, config: State<Config>, conn: State<my::Pool>) -> Templ
         else { &config.quantities[line.location.unit_id as usize - 1].unit }
     }
 
-    query_result = conn.prep_exec("SELECT res_loc_id, loc_val, loc_radius, location.lat, location.lon, res_qty_id, resource.res_name FROM resource_location \
+    query_result = conn.prep_exec("SELECT res_loc_id, loc_val, loc_radius, location.lat, location.lon, qty_id, resource.res_name FROM resource_location \
     JOIN resource ON resource.res_id = resource_location.res_id \
     JOIN location ON location.id = loc_id", ());
     let vec: Result<Vec<ResLocation>, String> = catch_mysql_err(query_result);
@@ -220,7 +220,7 @@ pub fn addline(transform_id: u64, amount: f64, location: u64, conn: State<my::Po
 
 /*#[get("/line/<id>")]
 pub fn line(id: u64, config: State<Config>, conn: State<my::Pool>) -> Template {
-    let mut query_result = conn.prep_exec("SELECT transform_line_id, transform_line_val, 0, resource_location.loc_val, location.lat, location.lon, resource_location.loc_radius, res_qty_id, resource.res_name FROM transform_line \
+    let mut query_result = conn.prep_exec("SELECT transform_line_id, transform_line_val, 0, resource_location.loc_val, location.lat, location.lon, resource_location.loc_radius, qty_id, resource.res_name FROM transform_line \
     JOIN resource_location ON transform_line.res_loc_id = resource_location.res_loc_id \
     JOIN location ON resource_location.loc_id = location.id \
     JOIN resource ON resource_location.res_id = resource.res_id WHERE transform_line_id = ?", (id,));
@@ -232,7 +232,7 @@ pub fn line(id: u64, config: State<Config>, conn: State<my::Pool>) -> Template {
     line.location.unit = if line.location.unit_id == 0 { "" }
     else { &config.quantities[line.location.unit_id as usize - 1].unit };
 
-    query_result = conn.prep_exec("SELECT res_loc_id, loc_val, loc_radius, location.lat, location.lon, res_qty_id, resource.res_name FROM resource_location \
+    query_result = conn.prep_exec("SELECT res_loc_id, loc_val, loc_radius, location.lat, location.lon, qty_id, resource.res_name FROM resource_location \
     JOIN resource ON resource.res_id = resource_location.res_id \
     JOIN location ON location.id = loc_id", ());
     let vec: Result<Vec<ResLocation>, String> = catch_mysql_err(query_result);
