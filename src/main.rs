@@ -204,3 +204,7 @@ fn catch_mysql_err<T: Serialize + Debug + FromRow>(query_result: Result<my::Quer
     }
     Ok(vec)
 }
+
+fn match_id(id: u64) -> usize {
+    id as usize - 1
+}

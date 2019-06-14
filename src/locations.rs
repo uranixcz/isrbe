@@ -4,7 +4,7 @@ use rocket::response::{Flash, Redirect};
 use mysql as my;
 use my::prelude::FromRow;
 //use std::fs;
-use crate::{catch_mysql_err, ERROR_PAGE, Config, Quantity};
+use crate::{catch_mysql_err, match_id, ERROR_PAGE, Config, Quantity};
 
 #[derive(Serialize)]
 struct LocationContext<'a> {
@@ -92,7 +92,7 @@ pub fn reslocation(id: u64, config: State<Config>, conn: State<my::Pool>) -> Tem
     }
     let mut location = vec.unwrap().remove(0);
     location.unit = if location.unit_id == 0 { "" }
-    else { &config.quantities[location.unit_id as usize - 1].unit };
+    else { &config.quantities[match_id(location.unit_id)].unit };
 
     query_result = conn.prep_exec("SELECT id, lat, lon FROM location", ());
     let vec: Result<Vec<Coordinates>, String> = catch_mysql_err(query_result);

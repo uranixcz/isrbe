@@ -10,8 +10,8 @@
                 <td><label for="unit">Unit</label></td>
                 <td>
                     <select name="unit" id="unit" required>
-                        <option value="{{location.unit_id}}" selected>Current ({{location.unit}})</option>
-                        <option value="0">Piece</option>
+                        <option value="{{location.unit_id}}" selected>Unchanged ({{location.unit}})</option>
+                        <option value="0">Number</option>
                         {{#each quantities}}
                             <option value="{{id}}">{{name}} ({{unit}})</option>
                         {{/each}}

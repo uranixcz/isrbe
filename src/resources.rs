@@ -4,7 +4,7 @@ use rocket::response::{Flash, Redirect};
 use mysql as my;
 use my::prelude::FromRow;
 use std::fs;
-use crate::{catch_mysql_err, ERROR_PAGE, Config, ResourceType, Quantity};
+use crate::{catch_mysql_err, match_id, ERROR_PAGE, Config, ResourceType, Quantity};
 use crate::locations::{ResLocation, Coordinates};
 
 #[derive(Serialize)]
@@ -106,7 +106,7 @@ pub fn resource(id: u64, config: State<Config>, conn: State<my::Pool>) -> Templa
         return Template::render(ERROR_PAGE, vec.unwrap_err().to_string())
     }
     let mut resource = vec.unwrap().remove(0);
-    resource.type_name = &config.resource_types[(resource.type_id - 1) as usize].type_name;
+    resource.type_name = &config.resource_types[match_id(resource.type_id)].type_name;
 
     query_result = conn.prep_exec("SELECT res_loc_id, loc_val, loc_radius, location.lat, location.lon, qty_id, \"\" \
     FROM resource_location JOIN location ON loc_id = location.id WHERE res_id = ?", (id,));
@@ -117,7 +117,7 @@ pub fn resource(id: u64, config: State<Config>, conn: State<my::Pool>) -> Templa
     resource.locations = vec.unwrap();
     for location in resource.locations.iter_mut() {
         location.unit = if location.unit_id == 0 { "" }
-        else { &config.quantities[location.unit_id as usize - 1].unit }
+        else { &config.quantities[match_id(location.unit_id)].unit }
     }
     query_result = conn.prep_exec("SELECT id, lat, lon FROM location", ());
     let vec: Result<Vec<Coordinates>, String> = catch_mysql_err(query_result);

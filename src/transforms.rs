@@ -4,7 +4,7 @@ use rocket::response::{Flash, Redirect};
 use mysql as my;
 use my::prelude::FromRow;
 use std::fs;
-use crate::{catch_mysql_err, ERROR_PAGE, Config, TransformType};
+use crate::{catch_mysql_err, match_id, ERROR_PAGE, Config, TransformType};
 use crate::locations::ResLocation;
 
 #[derive(Serialize)]
@@ -143,7 +143,7 @@ pub fn transform(id: u64, config: State<Config>, conn: State<my::Pool>) -> Templ
         return Template::render(ERROR_PAGE, vec.unwrap_err().to_string())
     }
     let mut transform = vec.unwrap().remove(0);
-    transform.type_name = &config.transform_types[(transform.type_id - 1) as usize].type_name;
+    transform.type_name = &config.transform_types[match_id(transform.type_id)].type_name;
 
     query_result = conn.prep_exec("SELECT transform_line_id, transform_line_val, 0, 0.0, location.lat, location.lon, resource_location.loc_radius, qty_id, resource.res_name FROM transform_line \
     JOIN resource_location ON transform_line.res_loc_id = resource_location.res_loc_id \
@@ -156,7 +156,7 @@ pub fn transform(id: u64, config: State<Config>, conn: State<my::Pool>) -> Templ
     transform.lines = vec.unwrap();
     for line in transform.lines.iter_mut() {
         line.location.unit = if line.location.unit_id == 0 { "" }
-        else { &config.quantities[line.location.unit_id as usize - 1].unit }
+        else { &config.quantities[match_id(line.location.unit_id)].unit }
     }
 
     query_result = conn.prep_exec("SELECT res_loc_id, loc_val, loc_radius, location.lat, location.lon, qty_id, resource.res_name FROM resource_location \
@@ -169,7 +169,7 @@ pub fn transform(id: u64, config: State<Config>, conn: State<my::Pool>) -> Templ
     let mut locations = vec.unwrap();
     for location in locations.iter_mut() {
         location.unit = if location.unit_id == 0 { "" }
-        else { &config.quantities[location.unit_id as usize - 1].unit }
+        else { &config.quantities[match_id(location.unit_id)].unit }
     }
 
     Template::render("transform", TransformContext {
@@ -230,7 +230,7 @@ pub fn line(id: u64, config: State<Config>, conn: State<my::Pool>) -> Template {
     }
     let mut line = vec.unwrap().remove(0);
     line.location.unit = if line.location.unit_id == 0 { "" }
-    else { &config.quantities[line.location.unit_id as usize - 1].unit };
+    else { &config.quantities[match_id(line.location.unit_id)].unit };
 
     query_result = conn.prep_exec("SELECT res_loc_id, loc_val, loc_radius, location.lat, location.lon, qty_id, resource.res_name FROM resource_location \
     JOIN resource ON resource.res_id = resource_location.res_id \
