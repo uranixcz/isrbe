@@ -128,7 +128,7 @@ pub fn addtransform_page(config: State<Config>) -> Template {
 
 #[get("/addtransform?<refer>&<type_id>")]
 pub fn addtransform(refer: String, type_id: u64, conn: State<my::Pool>) -> Flash<Redirect> {
-    let query_result = conn.prep_exec("INSERT INTO transform_hdr (transform_ref, transform_type_id) VALUES (?, ?)", (refer, type_id));
+    let query_result = conn.prep_exec("INSERT INTO transform_hdr (ref, type_id) VALUES (?, ?)", (refer, type_id));
     match query_result {
         Ok(_) => Flash::success(Redirect::to("/"), "Transformation added."),
         Err(e) => Flash::error(Redirect::to("/"), e.to_string())
@@ -137,7 +137,7 @@ pub fn addtransform(refer: String, type_id: u64, conn: State<my::Pool>) -> Flash
 
 #[get("/transform/<id>")]
 pub fn transform(id: u64, config: State<Config>, conn: State<my::Pool>) -> Template {
-    let mut query_result = conn.prep_exec("SELECT transform_hdr_id, transform_type_id, transform_ref FROM transform_hdr WHERE transform_hdr_id = ?", (id,));
+    let mut query_result = conn.prep_exec("SELECT id, type_id, ref FROM transform_hdr WHERE id = ?", (id,));
     let vec: Result<Vec<Transform>, String> = catch_mysql_err(query_result);
     if vec.is_err() {
         return Template::render(ERROR_PAGE, vec.unwrap_err().to_string())
@@ -145,10 +145,10 @@ pub fn transform(id: u64, config: State<Config>, conn: State<my::Pool>) -> Templ
     let mut transform = vec.unwrap().remove(0);
     transform.type_name = &config.transform_types[match_id(transform.type_id)].type_name;
 
-    query_result = conn.prep_exec("SELECT transform_line_id, transform_line_val, 0, 0.0, location.lat, location.lon, resource_location.loc_radius, qty_id, resource.res_name FROM transform_line \
+    query_result = conn.prep_exec("SELECT id, val, 0, 0.0, location.lat, location.lon, resource_location.loc_radius, qty_id, resource.name FROM transform_line \
     JOIN resource_location ON transform_line.res_loc_id = resource_location.res_loc_id \
     JOIN location ON resource_location.loc_id = location.id \
-    JOIN resource ON resource_location.res_id = resource.res_id WHERE transform_hdr_id = ?", (id,));
+    JOIN resource ON resource_location.res_id = resource.id WHERE transform_hdr_id = ?", (id,));
     let vec: Result<Vec<TransformLine>, String> = catch_mysql_err(query_result);
     if vec.is_err() {
         return Template::render(ERROR_PAGE, vec.unwrap_err().to_string())
@@ -159,8 +159,8 @@ pub fn transform(id: u64, config: State<Config>, conn: State<my::Pool>) -> Templ
         else { &config.quantities[match_id(line.location.unit_id)].unit }
     }
 
-    query_result = conn.prep_exec("SELECT res_loc_id, loc_val, loc_radius, location.lat, location.lon, qty_id, resource.res_name FROM resource_location \
-    JOIN resource ON resource.res_id = resource_location.res_id \
+    query_result = conn.prep_exec("SELECT res_loc_id, loc_val, loc_radius, location.lat, location.lon, res_param_id, resource.name FROM resource_location \
+    JOIN resource ON resource.id = resource_location.res_id \
     JOIN location ON location.id = loc_id", ());
     let vec: Result<Vec<ResLocation>, String> = catch_mysql_err(query_result);
     if vec.is_err() {
@@ -181,7 +181,7 @@ pub fn transform(id: u64, config: State<Config>, conn: State<my::Pool>) -> Templ
 
 #[get("/modifytransform?<id>&<refer>&<type_id>")]
 pub fn modifytransform(id: u64, refer: String, type_id: u64, conn: State<my::Pool>) -> Flash<Redirect> {
-    let query_result = conn.prep_exec("UPDATE transform_hdr SET transform_ref = ?, transform_type_id = ? WHERE transform_hdr_id = ?", (refer, type_id, id));
+    let query_result = conn.prep_exec("UPDATE transform_hdr SET ref = ?, type_id = ? WHERE id = ?", (refer, type_id, id));
     match query_result {
         Ok(_) => Flash::success(Redirect::to("/"), "Transformation header modified."),
         Err(e) => Flash::error(Redirect::to("/"), e.to_string())
@@ -194,7 +194,7 @@ pub fn addline(transform_id: u64, amount: f64, location: u64, conn: State<my::Po
         return Flash::error(Redirect::to("/"), "Line cannot have 0 amount.")
     }
     // get original resource amount at location
-    let orig_value: f64 = match conn.first_exec("SELECT loc_val FROM resource_location WHERE res_loc_id = ?", (location,)) {
+    let orig_value: f64 = match conn.first_exec("SELECT loc_val FROM resource_location WHERE id = ?", (location,)) {
         Ok(Some(row)) => row.get(0).unwrap(),
         Ok(None) => return Flash::error(Redirect::to("/"), "No such resource location."),
         Err(e) => return Flash::error(Redirect::to("/"), e.to_string()),
@@ -205,12 +205,12 @@ pub fn addline(transform_id: u64, amount: f64, location: u64, conn: State<my::Po
         return Flash::error(Redirect::to("/"), "Amount at location must not be negative.")
     }
     // update amount at location
-    let mut query_result = conn.prep_exec("UPDATE resource_location SET loc_val = loc_val + ? WHERE res_loc_id = ?", (amount, location));
+    let mut query_result = conn.prep_exec("UPDATE resource_location SET loc_val = loc_val + ? WHERE id = ?", (amount, location));
     if query_result.is_err() {
         return Flash::error(Redirect::to("/"), query_result.unwrap_err().to_string());
     }
 
-    query_result = conn.prep_exec("INSERT INTO transform_line (transform_hdr_id, res_loc_id, transform_line_val) VALUES (?, ?, ?)",
+    query_result = conn.prep_exec("INSERT INTO transform_line (transform_hdr_id, res_loc_id, val) VALUES (?, ?, ?)",
                                       (transform_id, location, amount));
     match query_result {
         Ok(_) => Flash::success(Redirect::to("/"), "Transform line added."),
@@ -220,10 +220,10 @@ pub fn addline(transform_id: u64, amount: f64, location: u64, conn: State<my::Po
 
 /*#[get("/line/<id>")]
 pub fn line(id: u64, config: State<Config>, conn: State<my::Pool>) -> Template {
-    let mut query_result = conn.prep_exec("SELECT transform_line_id, transform_line_val, 0, resource_location.loc_val, location.lat, location.lon, resource_location.loc_radius, qty_id, resource.res_name FROM transform_line \
-    JOIN resource_location ON transform_line.res_loc_id = resource_location.res_loc_id \
+    let mut query_result = conn.prep_exec("SELECT id, val, 0, resource_location.loc_val, location.lat, location.lon, resource_location.loc_radius, qty_id, resource.name FROM transform_line \
+    JOIN resource_location ON transform_line.res_loc_id = resource_location.id \
     JOIN location ON resource_location.loc_id = location.id \
-    JOIN resource ON resource_location.res_id = resource.res_id WHERE transform_line_id = ?", (id,));
+    JOIN resource ON resource_location.res_id = resource.id WHERE id = ?", (id,));
     let vec: Result<Vec<TransformLine>, String> = catch_mysql_err(query_result);
     if vec.is_err() {
         return Template::render(ERROR_PAGE, vec.unwrap_err().to_string())
@@ -232,8 +232,8 @@ pub fn line(id: u64, config: State<Config>, conn: State<my::Pool>) -> Template {
     line.location.unit = if line.location.unit_id == 0 { "" }
     else { &config.quantities[match_id(line.location.unit_id)].unit };
 
-    query_result = conn.prep_exec("SELECT res_loc_id, loc_val, loc_radius, location.lat, location.lon, qty_id, resource.res_name FROM resource_location \
-    JOIN resource ON resource.res_id = resource_location.res_id \
+    query_result = conn.prep_exec("SELECT id, loc_val, loc_radius, location.lat, location.lon, res_param_id, resource.name FROM resource_location \
+    JOIN resource ON resource.id = resource_location.res_id \
     JOIN location ON location.id = loc_id", ());
     let vec: Result<Vec<ResLocation>, String> = catch_mysql_err(query_result);
     if vec.is_err() {
@@ -248,7 +248,7 @@ pub fn line(id: u64, config: State<Config>, conn: State<my::Pool>) -> Template {
 
 /*#[get("/modifyline?<id>&<amount>&<location>")]
 pub fn modifyline(id: u64, amount: f64, location: u64, conn: State<my::Pool>) -> Flash<Redirect> {
-    let query_result = conn.prep_exec("UPDATE transform_line SET res_loc_id = ?, transform_line_val = ? WHERE transform_line_id = ?",
+    let query_result = conn.prep_exec("UPDATE transform_line SET res_loc_id = ?, val = ? WHERE id = ?",
                                       (location, amount, id));
     match query_result {
         Ok(_) => Flash::success(Redirect::to("/"), "Transform line modified."),
@@ -259,18 +259,18 @@ pub fn modifyline(id: u64, amount: f64, location: u64, conn: State<my::Pool>) ->
 #[get("/deleteline/<id>")]
 pub fn deleteline(id: u64, conn: State<my::Pool>) -> Flash<Redirect> {
     // get location and amount
-    let (amount, location): (f64, u64) = match conn.first_exec("SELECT transform_line_val, res_loc_id FROM transform_line WHERE transform_line_id = ?", (id,)) {
+    let (amount, location): (f64, u64) = match conn.first_exec("SELECT val, res_loc_id FROM transform_line WHERE id = ?", (id,)) {
         Ok(Some(row)) => (row.get(0).unwrap(), row.get(1).unwrap()),
         Ok(None) => return Flash::error(Redirect::to("/"), "No such transformation line."),
         Err(e) => return Flash::error(Redirect::to("/"), e.to_string()),
     };
     // update amount at location
-    let mut query_result = conn.prep_exec("UPDATE resource_location SET loc_val = loc_val - ? WHERE res_loc_id = ?", (amount, location));
+    let mut query_result = conn.prep_exec("UPDATE resource_location SET loc_val = loc_val - ? WHERE id = ?", (amount, location));
     if query_result.is_err() {
         return Flash::error(Redirect::to("/"), query_result.unwrap_err().to_string());
     }
 
-    query_result = conn.prep_exec("DELETE FROM transform_line WHERE transform_line_id = ?", (id,));
+    query_result = conn.prep_exec("DELETE FROM transform_line WHERE id = ?", (id,));
     match query_result {
         Ok(_) => Flash::success(Redirect::to("/"), "Transform line removed."),
         Err(e) => Flash::error(Redirect::to("/"), e.to_string())

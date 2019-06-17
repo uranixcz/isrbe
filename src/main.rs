@@ -33,10 +33,12 @@ use my::prelude::FromRow;
 use locations::*;
 use resources::*;
 use transforms::*;
+use parameters::*;
 
 mod locations;
 mod resources;
 mod transforms;
+mod parameters;
 
 const ERROR_PAGE: &str = "error";
 
@@ -134,8 +136,8 @@ fn index(flash: Option<FlashMessage>, conn: State<my::Pool>) -> Template {
         fn message(mut self, msg: &'a str) -> Self { self.message = Some(msg); self}
     }
 
-    let resource_count = conn.first_exec("SELECT COUNT(res_id) from resource",()).unwrap().unwrap().get(0).unwrap();
-    let transform_count = conn.first_exec("SELECT COUNT(transform_hdr_id) from transform_hdr",()).unwrap().unwrap().get(0).unwrap();
+    let resource_count = conn.first_exec("SELECT COUNT(id) from resource",()).unwrap().unwrap().get(0).unwrap();
+    let transform_count = conn.first_exec("SELECT COUNT(id) from transform_hdr",()).unwrap().unwrap().get(0).unwrap();
 
     let overview = Overview {
         resource_count,
@@ -163,8 +165,8 @@ fn rocket() -> Rocket {
             let db_url = rocket.config().get_str("db_url").expect("Please set db_url = \"mysql://...\" in Rocket.toml");
             let pool = my::Pool::new(db_url).unwrap();
             let resource_types: Vec<ResourceType> = catch_mysql_err(pool.prep_exec("SELECT res_type_id, res_type_name FROM resource_type", ())).unwrap();
-            let quantities: Vec<Quantity> =  catch_mysql_err(pool.prep_exec("SELECT qty_id, qty_name, qty_unit FROM quantity", ())).unwrap();
-            let transform_types: Vec<TransformType> = catch_mysql_err(pool.prep_exec("SELECT transf_type_id, transf_type_name FROM transform_type", ())).unwrap();
+            let quantities: Vec<Quantity> =  catch_mysql_err(pool.prep_exec("SELECT id, name, unit FROM quantity", ())).unwrap();
+            let transform_types: Vec<TransformType> = catch_mysql_err(pool.prep_exec("SELECT id, name FROM transform_type", ())).unwrap();
             Ok(rocket.manage(Config {
                 resource_types,
                 transform_types,
@@ -177,7 +179,8 @@ fn rocket() -> Rocket {
         .mount("/", routes![index, resources, resource, addresource_page, addresource, modifyresource,
         addreslocation, reslocation, modifyreslocation,
         locations, addlocation_page, addlocation,
-        transforms, transform, addtransform_page, addtransform, modifytransform, addline, deleteline])
+        transforms, transform, addtransform_page, addtransform, modifytransform, addline, deleteline,
+        addparam])
         .mount("/static", rocket_contrib::serve::StaticFiles::from("static"))
 }
 

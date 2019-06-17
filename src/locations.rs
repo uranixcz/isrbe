@@ -74,7 +74,7 @@ impl FromRow for Coordinates {
 
 #[get("/addreslocation?<resource_id>&<amount>&<unit>&<radius>&<location>")]
 pub fn addreslocation(resource_id: u64, amount: f64, unit: u64, radius: u64, location: u64, conn: State<my::Pool>) -> Flash<Redirect> {
-    let query_result = conn.prep_exec("INSERT INTO resource_location (res_id, qty_id, loc_id, loc_radius, loc_val) VALUES (?, ?, ?, ?, ?)",
+    let query_result = conn.prep_exec("INSERT INTO resource_location (res_id, res_param_id, loc_id, loc_radius, loc_val) VALUES (?, ?, ?, ?, ?)",
                                       (resource_id, unit, location, radius, amount));
     match query_result {
         Ok(_) => Flash::success(Redirect::to("/"), "Resource location added."),
@@ -84,8 +84,8 @@ pub fn addreslocation(resource_id: u64, amount: f64, unit: u64, radius: u64, loc
 
 #[get("/reslocation/<id>")]
 pub fn reslocation(id: u64, config: State<Config>, conn: State<my::Pool>) -> Template {
-    let mut query_result = conn.prep_exec("SELECT res_loc_id, loc_val, loc_radius, location.lat, location.lon, qty_id, \"\" \
-    FROM resource_location JOIN location ON loc_id = location.id WHERE res_loc_id = ?", (id,));
+    let mut query_result = conn.prep_exec("SELECT id, loc_val, loc_radius, location.lat, location.lon, res_param_id, \"\" \
+    FROM resource_location JOIN location ON loc_id = location.id WHERE id = ?", (id,));
     let vec: Result<Vec<ResLocation>, String> = catch_mysql_err(query_result);
     if vec.is_err() {
         return Template::render(ERROR_PAGE, vec.unwrap_err().to_string())
@@ -109,7 +109,7 @@ pub fn reslocation(id: u64, config: State<Config>, conn: State<my::Pool>) -> Tem
 
 #[get("/modifyreslocation?<id>&<amount>&<unit>&<radius>&<location>")]
 pub fn modifyreslocation(id: u64, amount: f64, unit: u64, radius: u64, location: u64, conn: State<my::Pool>) -> Flash<Redirect> {
-    let query_result = conn.prep_exec("UPDATE resource_location SET qty_id = ?, loc_id = ?, loc_radius = ?, loc_val = ? WHERE res_loc_id = ?",
+    let query_result = conn.prep_exec("UPDATE resource_location SET res_param_id = ?, loc_id = ?, loc_radius = ?, loc_val = ? WHERE id = ?",
                                       (unit, location, radius, amount, id));
     match query_result {
         Ok(_) => Flash::success(Redirect::to("/"), "Resource location modified."),
@@ -119,7 +119,7 @@ pub fn modifyreslocation(id: u64, amount: f64, unit: u64, radius: u64, location:
 
 /*#[get("/deletereslocation/<id>")]
 pub fn deletereslocation(id: u64, conn: State<my::Pool>) -> Flash<Redirect> {
-    let query_result = conn.prep_exec("DELETE FROM resource_location WHERE res_loc_id = ?", (id,));
+    let query_result = conn.prep_exec("DELETE FROM resource_location WHERE id = ?", (id,));
     match query_result {
         Ok(_) => Flash::success(Redirect::to("/"), "Location removed."),
         Err(e) => Flash::error(Redirect::to("/"), e.to_string())

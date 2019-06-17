@@ -91,7 +91,7 @@ pub fn addresource_page(config: State<Config>) -> Template {
 
 #[get("/addresource?<name>&<type_id>")]
 pub fn addresource(name: String, type_id: u64, conn: State<my::Pool>) -> Flash<Redirect> {
-    let query_result = conn.prep_exec("INSERT INTO resource (res_name, res_type_id) VALUES (?, ?)", (name, type_id));
+    let query_result = conn.prep_exec("INSERT INTO resource (name, type_id) VALUES (?, ?)", (name, type_id));
     match query_result {
         Ok(_) => Flash::success(Redirect::to("/"), "Resource added."),
         Err(e) => Flash::error(Redirect::to("/"), e.to_string())
@@ -100,7 +100,7 @@ pub fn addresource(name: String, type_id: u64, conn: State<my::Pool>) -> Flash<R
 
 #[get("/resource/<id>")]
 pub fn resource(id: u64, config: State<Config>, conn: State<my::Pool>) -> Template {
-    let mut query_result = conn.prep_exec("SELECT res_id, res_name, res_type_id FROM resource WHERE res_id = ?", (id,));
+    let mut query_result = conn.prep_exec("SELECT id, name, type_id FROM resource WHERE id = ?", (id,));
     let vec: Result<Vec<Resource>, String> = catch_mysql_err(query_result);
     if vec.is_err() {
         return Template::render(ERROR_PAGE, vec.unwrap_err().to_string())
@@ -108,7 +108,7 @@ pub fn resource(id: u64, config: State<Config>, conn: State<my::Pool>) -> Templa
     let mut resource = vec.unwrap().remove(0);
     resource.type_name = &config.resource_types[match_id(resource.type_id)].type_name;
 
-    query_result = conn.prep_exec("SELECT res_loc_id, loc_val, loc_radius, location.lat, location.lon, qty_id, \"\" \
+    query_result = conn.prep_exec("SELECT id, loc_val, loc_radius, location.lat, location.lon, res_param_id, \"\" \
     FROM resource_location JOIN location ON loc_id = location.id WHERE res_id = ?", (id,));
     let vec: Result<Vec<ResLocation>, String> = catch_mysql_err(query_result);
     if vec.is_err() {
@@ -135,7 +135,7 @@ pub fn resource(id: u64, config: State<Config>, conn: State<my::Pool>) -> Templa
 
 #[get("/modifyresource?<id>&<name>&<type_id>")]
 pub fn modifyresource(id: u64, name: String, type_id: u64, conn: State<my::Pool>) -> Flash<Redirect> {
-    let query_result = conn.prep_exec("UPDATE resource SET res_name = ?, res_type_id = ? WHERE res_id = ?", (name, type_id, id));
+    let query_result = conn.prep_exec("UPDATE resource SET name = ?, type_id = ? WHERE id = ?", (name, type_id, id));
     match query_result {
         Ok(_) => Flash::success(Redirect::to("/"), "Resource modified."),
         Err(e) => Flash::error(Redirect::to("/"), e.to_string())
