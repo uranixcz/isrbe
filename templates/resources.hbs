@@ -1,13 +1,13 @@
 {{#*inline "page"}}
 <table>
-    <tr><th>ID</th><th>Name</th><th>Type</th><th>Locations</th><th>Quantity</th></tr>
+    <tr><th>ID</th><th>Name</th><th>Type</th><th>Locations</th><th>Parameters</th></tr>
     {{#each .}}
         <tr>
             <td>{{id}}</td>
             <td><a href="/resource/{{id}}">{{name}}</a></td>
             <td>{{type_id}}</td>
             <td>{{locations}}</td>
-            <td>{{quantity}}</td>
+            <td><a href="/resource/{{id}}/params">{{parameters}}</a></td>
         </tr>
     {{/each}}
 </table>

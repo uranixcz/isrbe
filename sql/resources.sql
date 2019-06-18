@@ -1,4 +1,8 @@
 SELECT resource.id, resource.name, resource_type.res_type_name,
-(SELECT COUNT(res_loc_id) FROM resource_location WHERE resource.id = resource_location.res_id) as "locations",
-(SELECT SUM(loc_val) FROM resource_location WHERE resource.id = resource_location.res_id) as "total quantity"
-FROM resource JOIN resource_type ON resource.type_id = resource_type.res_type_id ORDER BY res_id
+(SELECT COUNT(resource_location.id) FROM resource_location
+	JOIN resource_param ON resource_param.id = resource_location.res_param_id
+	WHERE resource.id = resource_param.res_id AND resource_param.is_movable = 1) as "locations",
+(SELECT COUNT(resource_param.id) FROM resource_param
+    WHERE resource.id = resource_param.res_id) as "parameters"
+FROM resource JOIN resource_type ON resource.type_id = resource_type.res_type_id
+ORDER BY resource.id

@@ -21,7 +21,7 @@ struct Resource <'a>{
     name: String,
     type_id: u64,
     type_name: &'a str,
-    locations: Vec<ResLocation<'a>>,
+    //locations: Vec<ResLocation<'a>>,
 }
 impl<'a> FromRow for Resource<'a> {
     fn from_row(_row: my::Row) -> Self {
@@ -38,7 +38,7 @@ impl<'a> FromRow for Resource<'a> {
                 name,
                 type_id,
                 type_name: "",
-                locations: Vec::new(),
+                //locations: Vec::new(),
             })
         }
     }
@@ -52,7 +52,7 @@ pub fn resources(conn: State<my::Pool>) -> Template {
         name: String,
         type_id: String,
         locations: u64,
-        quantity: Option<f64>,
+        parameters: u64,
     }
     impl FromRow for Resource {
         fn from_row(_row: my::Row) -> Self {
@@ -63,13 +63,13 @@ pub fn resources(conn: State<my::Pool>) -> Template {
             if deconstruct.is_err() {
                 Err(deconstruct.unwrap_err())
             } else {
-                let (id, name, type_id, locations, quantity) = deconstruct.unwrap();
+                let (id, name, type_id, locations, parameters) = deconstruct.unwrap();
                 Ok(Resource {
                     id,
                     name,
                     type_id,
                     locations,
-                    quantity
+                    parameters
                 })
             }
         }
@@ -108,7 +108,7 @@ pub fn resource(id: u64, config: State<Config>, conn: State<my::Pool>) -> Templa
     let mut resource = vec.unwrap().remove(0);
     resource.type_name = &config.resource_types[match_id(resource.type_id)].type_name;
 
-    query_result = conn.prep_exec("SELECT id, loc_val, loc_radius, location.lat, location.lon, res_param_id, \"\" \
+    /*query_result = conn.prep_exec("SELECT id, loc_val, loc_radius, location.lat, location.lon, res_param_id, \"\" \
     FROM resource_location JOIN location ON loc_id = location.id WHERE res_id = ?", (id,));
     let vec: Result<Vec<ResLocation>, String> = catch_mysql_err(query_result);
     if vec.is_err() {
@@ -118,7 +118,7 @@ pub fn resource(id: u64, config: State<Config>, conn: State<my::Pool>) -> Templa
     for location in resource.locations.iter_mut() {
         location.unit = if location.unit_id == 0 { "" }
         else { &config.quantities[match_id(location.unit_id)].unit }
-    }
+    }*/
     query_result = conn.prep_exec("SELECT id, lat, lon FROM location", ());
     let vec: Result<Vec<Coordinates>, String> = catch_mysql_err(query_result);
     if vec.is_err() {

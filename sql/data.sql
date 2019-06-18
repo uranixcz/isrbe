@@ -25,15 +25,79 @@ LOCK TABLES `location` WRITE;
 INSERT INTO `location` VALUES (1,0.0000000,0.0000000),(2,0.0017000,0.0008000);
 /*!40000 ALTER TABLE `location` ENABLE KEYS */;
 UNLOCK TABLES;
+DROP TABLE IF EXISTS `param`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `param` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `name` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
+  `type` tinyint(3) unsigned NOT NULL,
+  `qty_id` bigint(20) unsigned NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `name` (`name`)
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+LOCK TABLES `param` WRITE;
+/*!40000 ALTER TABLE `param` DISABLE KEYS */;
+INSERT INTO `param` VALUES (1,'amount',0,0),(2,'weight',0,2);
+/*!40000 ALTER TABLE `param` ENABLE KEYS */;
+UNLOCK TABLES;
+DROP TABLE IF EXISTS `param_float`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `param_float` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `res_qty_id` bigint(20) unsigned NOT NULL,
+  `val` double NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+LOCK TABLES `param_float` WRITE;
+/*!40000 ALTER TABLE `param_float` DISABLE KEYS */;
+INSERT INTO `param_float` VALUES (1,1,1);
+/*!40000 ALTER TABLE `param_float` ENABLE KEYS */;
+UNLOCK TABLES;
+DROP TABLE IF EXISTS `param_res`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `param_res` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `res_qty_id` bigint(20) unsigned NOT NULL,
+  `val` bigint(20) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+LOCK TABLES `param_res` WRITE;
+/*!40000 ALTER TABLE `param_res` DISABLE KEYS */;
+/*!40000 ALTER TABLE `param_res` ENABLE KEYS */;
+UNLOCK TABLES;
+DROP TABLE IF EXISTS `param_text`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `param_text` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `res_qty_id` bigint(20) unsigned NOT NULL,
+  `val` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+LOCK TABLES `param_text` WRITE;
+/*!40000 ALTER TABLE `param_text` DISABLE KEYS */;
+/*!40000 ALTER TABLE `param_text` ENABLE KEYS */;
+UNLOCK TABLES;
 DROP TABLE IF EXISTS `quantity`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `quantity` (
-  `qty_id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `qty_name` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
-  `qty_unit` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
-  `qty_def` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
-  PRIMARY KEY (`qty_id`)
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `name` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
+  `unit` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
+  `def` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=30 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -62,10 +126,10 @@ DROP TABLE IF EXISTS `resource`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `resource` (
-  `res_id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `res_name` varchar(100) COLLATE utf8_unicode_ci NOT NULL,
-  `res_type_id` bigint(20) unsigned NOT NULL,
-  PRIMARY KEY (`res_id`)
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `name` varchar(100) COLLATE utf8_unicode_ci NOT NULL,
+  `type_id` bigint(20) unsigned NOT NULL,
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -78,39 +142,38 @@ DROP TABLE IF EXISTS `resource_location`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `resource_location` (
-  `res_loc_id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `res_id` bigint(20) unsigned NOT NULL COMMENT 'pridano MM',
-  `qty_id` bigint(20) unsigned NOT NULL COMMENT 'prejmenovano z res_qty_id',
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `res_param_id` bigint(20) unsigned NOT NULL COMMENT 'prejmenovano z res_qty_id',
   `loc_id` bigint(20) unsigned NOT NULL,
   `loc_radius` decimal(10,0) unsigned NOT NULL,
   `loc_val` double NOT NULL,
-  PRIMARY KEY (`res_loc_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 LOCK TABLES `resource_location` WRITE;
 /*!40000 ALTER TABLE `resource_location` DISABLE KEYS */;
-INSERT INTO `resource_location` VALUES (1,1,2,1,0,555),(2,1,2,1,1,445),(4,1,0,1,0,0),(5,9,2,1,0,0),(6,10,0,1,0,1);
+INSERT INTO `resource_location` VALUES (1,1,1,0,555);
 /*!40000 ALTER TABLE `resource_location` ENABLE KEYS */;
 UNLOCK TABLES;
-DROP TABLE IF EXISTS `resource_quantity`;
+DROP TABLE IF EXISTS `resource_param`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `resource_quantity` (
-  `res_qty_id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+CREATE TABLE `resource_param` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT 'upraveno MM',
   `res_id` bigint(20) unsigned NOT NULL,
-  `qty_id` bigint(20) unsigned NOT NULL,
-  `qty_val` float unsigned NOT NULL,
+  `param_id` bigint(20) unsigned NOT NULL,
   `qty_10exp_id` bigint(20) unsigned NOT NULL DEFAULT '11',
-  `qty_move` bit(1) NOT NULL,
-  PRIMARY KEY (`res_qty_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+  `is_movable` tinyint(1) NOT NULL COMMENT 'upraveno MM',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `res_id` (`res_id`,`param_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci COMMENT='prejemenovano z resource_quantity';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
-LOCK TABLES `resource_quantity` WRITE;
-/*!40000 ALTER TABLE `resource_quantity` DISABLE KEYS */;
-INSERT INTO `resource_quantity` VALUES (1,1,3,100,11,'\0'),(2,1,4,100,11,'\0'),(3,1,5,2000,11,'\0'),(4,1,2,1,11,'\0'),(6,1,7,2,11,'\0'),(8,1,6,500,11,'\0');
-/*!40000 ALTER TABLE `resource_quantity` ENABLE KEYS */;
+LOCK TABLES `resource_param` WRITE;
+/*!40000 ALTER TABLE `resource_param` DISABLE KEYS */;
+INSERT INTO `resource_param` VALUES (1,1,2,11,1);
+/*!40000 ALTER TABLE `resource_param` ENABLE KEYS */;
 UNLOCK TABLES;
 DROP TABLE IF EXISTS `resource_type`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -132,42 +195,40 @@ DROP TABLE IF EXISTS `transform_hdr`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `transform_hdr` (
-  `transform_hdr_id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `transform_type_id` bigint(20) unsigned NOT NULL,
-  `transform_ref` varchar(100) COLLATE utf8_unicode_ci NOT NULL,
-  PRIMARY KEY (`transform_hdr_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `type_id` bigint(20) unsigned NOT NULL,
+  `ref` varchar(100) COLLATE utf8_unicode_ci NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 LOCK TABLES `transform_hdr` WRITE;
 /*!40000 ALTER TABLE `transform_hdr` DISABLE KEYS */;
-INSERT INTO `transform_hdr` VALUES (1,3,'??'),(2,1,'bla'),(3,1,'I would like a Pizza please');
 /*!40000 ALTER TABLE `transform_hdr` ENABLE KEYS */;
 UNLOCK TABLES;
 DROP TABLE IF EXISTS `transform_line`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `transform_line` (
-  `transform_line_id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `transform_hdr_id` bigint(20) unsigned NOT NULL,
   `res_loc_id` bigint(20) unsigned NOT NULL,
-  `transform_line_val` double NOT NULL,
-  PRIMARY KEY (`transform_line_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+  `val` double NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 LOCK TABLES `transform_line` WRITE;
 /*!40000 ALTER TABLE `transform_line` DISABLE KEYS */;
-INSERT INTO `transform_line` VALUES (6,1,1,-0.01),(9,3,5,-1000),(10,3,6,1);
 /*!40000 ALTER TABLE `transform_line` ENABLE KEYS */;
 UNLOCK TABLES;
 DROP TABLE IF EXISTS `transform_type`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `transform_type` (
-  `transf_type_id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `transf_type_name` varchar(100) COLLATE utf8_unicode_ci NOT NULL,
-  PRIMARY KEY (`transf_type_id`)
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `name` varchar(100) COLLATE utf8_unicode_ci NOT NULL,
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
