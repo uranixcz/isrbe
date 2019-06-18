@@ -3,7 +3,7 @@ use rocket::State;
 use rocket::response::{Flash, Redirect};
 use mysql as my;
 use my::prelude::FromRow;
-//use std::fs;
+use std::fs;
 use crate::{catch_mysql_err, match_id, ERROR_PAGE, Config, Quantity};
 
 #[derive(Serialize)]
@@ -172,6 +172,48 @@ pub fn locations(conn: State<my::Pool>) -> Template {
     let vec: Result<Vec<Location>, String> = catch_mysql_err(query_result);
     match vec {
         Ok(v) => Template::render("locations", v),
+        Err(e) => Template::render(ERROR_PAGE, e)
+    }
+}
+
+#[get("/resource/<id>/locations")]
+pub fn reslocations(id: u64, conn: State<my::Pool>) -> Template {
+    #[derive(Serialize, Debug)]
+    struct ResLocation {
+        id: u64,
+        amount: f64,
+        lat: f64,
+        lon: f64,
+        radius: u64,
+        unit: String
+    }
+    impl FromRow for ResLocation {
+        fn from_row(_row: my::Row) -> Self {
+            unimplemented!()
+        }
+        fn from_row_opt(row: my::Row) -> Result<Self, my::FromRowError> {
+            let deconstruct = my::from_row_opt(row);
+            if deconstruct.is_err() {
+                Err(deconstruct.unwrap_err())
+            } else {
+                let (id, amount, radius, lat, lon, unit) = deconstruct.unwrap();
+                Ok(ResLocation {
+                    id,
+                    amount,
+                    lat,
+                    lon,
+                    radius,
+                    unit,
+                })
+            }
+        }
+    }
+
+    let query_result = conn.prep_exec(fs::read_to_string("sql/reslocations.sql").expect("file error"), (id,));
+
+    let vec: Result<Vec<ResLocation>, String> = catch_mysql_err(query_result);
+    match vec {
+        Ok(v) => Template::render("reslocations", v),
         Err(e) => Template::render(ERROR_PAGE, e)
     }
 }

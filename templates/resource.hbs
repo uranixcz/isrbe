@@ -62,21 +62,6 @@
                 </tr>
             </table>
         </form>
-        <br>
-        <table>
-            <tr><th colspan="6">List of locations</th></tr>
-            <tr><th>ID</th><th>Amount</th><th>Latitude</th><th>Longitude</th><th>Radius</th><th>Operation</th></tr>
-            {{#each resource.locations}}
-                    <tr>
-                        <td>{{id}}</td>
-                        <td>{{amount}} {{unit}}</td>
-                        <td>{{lat}}</td>
-                        <td>{{lon}}</td>
-                        <td>{{radius}}m</td>
-                        <td><a href="/reslocation/{{id}}">Edit</a></td>
-                    </tr>
-            {{/each}}
-        </table>
     {{/if}}
 {{/inline}}
 {{> layout}}

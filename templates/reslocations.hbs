@@ -1,0 +1,17 @@
+{{#*inline "page"}}
+    <table>
+        <tr><th colspan="6">List of locations</th></tr>
+        <tr><th>ID</th><th>Amount</th><th>Latitude</th><th>Longitude</th><th>Radius</th><th>Operation</th></tr>
+        {{#each .}}
+            <tr>
+                <td>{{id}}</td>
+                <td>{{amount}} {{unit}}</td>
+                <td>{{lat}}</td>
+                <td>{{lon}}</td>
+                <td>{{radius}}m</td>
+                <td>Edit</td>
+            </tr>
+        {{/each}}
+    </table>
+{{/inline}}
+{{> layout}}

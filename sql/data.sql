@@ -48,7 +48,7 @@ DROP TABLE IF EXISTS `param_float`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `param_float` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `res_qty_id` bigint(20) unsigned NOT NULL,
+  `res_param_id` bigint(20) unsigned NOT NULL,
   `val` double NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
@@ -64,7 +64,7 @@ DROP TABLE IF EXISTS `param_res`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `param_res` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `res_qty_id` bigint(20) unsigned NOT NULL,
+  `res_param_id` bigint(20) unsigned NOT NULL,
   `val` bigint(20) NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
@@ -79,7 +79,7 @@ DROP TABLE IF EXISTS `param_text`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `param_text` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `res_qty_id` bigint(20) unsigned NOT NULL,
+  `res_param_id` bigint(20) unsigned NOT NULL,
   `val` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;

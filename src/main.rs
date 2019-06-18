@@ -177,7 +177,7 @@ fn rocket() -> Rocket {
             )
         }))
         .mount("/", routes![index, resources, resource, addresource_page, addresource, modifyresource,
-        addreslocation, reslocation, modifyreslocation,
+        addreslocation, reslocation, modifyreslocation, reslocations,
         locations, addlocation_page, addlocation,
         transforms, transform, addtransform_page, addtransform, modifytransform, addline, deleteline,
         addparam, addresparam, resparams])
