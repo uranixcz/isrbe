@@ -35,12 +35,12 @@ CREATE TABLE `param` (
   `qty_id` bigint(20) unsigned NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `name` (`name`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 LOCK TABLES `param` WRITE;
 /*!40000 ALTER TABLE `param` DISABLE KEYS */;
-INSERT INTO `param` VALUES (1,'amount',0,0),(2,'weight',0,2);
+INSERT INTO `param` VALUES (1,'amount',1,0),(2,'weight',1,2),(3,'length',1,1),(4,'time',1,3);
 /*!40000 ALTER TABLE `param` ENABLE KEYS */;
 UNLOCK TABLES;
 DROP TABLE IF EXISTS `param_float`;
@@ -88,6 +88,21 @@ CREATE TABLE `param_text` (
 LOCK TABLES `param_text` WRITE;
 /*!40000 ALTER TABLE `param_text` DISABLE KEYS */;
 /*!40000 ALTER TABLE `param_text` ENABLE KEYS */;
+UNLOCK TABLES;
+DROP TABLE IF EXISTS `param_type`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `param_type` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `name` varchar(20) COLLATE utf8_unicode_ci NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+LOCK TABLES `param_type` WRITE;
+/*!40000 ALTER TABLE `param_type` DISABLE KEYS */;
+INSERT INTO `param_type` VALUES (1,'number'),(2,'text'),(3,'resource');
+/*!40000 ALTER TABLE `param_type` ENABLE KEYS */;
 UNLOCK TABLES;
 DROP TABLE IF EXISTS `quantity`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
