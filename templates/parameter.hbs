@@ -1,0 +1,35 @@
+{{#*inline "page"}}
+    <form action="/addparameter" method="get" accept-charset="utf-8">
+        <table>
+            <tr>
+                <td><label for="name">parameter name</label></td>
+                <td><input type="text" name="name" id="name" value="" required autofocus/></td>
+            </tr>
+            <tr>
+                <td><label for="type_id">parameter type</label></td>
+                <td>
+                    <select name="type_id" id="type_id" required>
+                        <option value="1">Number</option>
+                        <option value="2">Text</option>
+                        <option value="3">Resource</option>
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td><label for="type_id">unit</label></td>
+                <td>
+                    <select name="unit" id="unit" required>
+                        {{#each .}}
+                            <option value="{{id}}">{{name}} ({{unit}})</option>
+                        {{/each}}
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td></td>
+                <td><input type="submit" value="Submit" /></td>
+            </tr>
+        </table>
+    </form>
+{{/inline}}
+{{> layout}}

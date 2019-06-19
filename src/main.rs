@@ -180,7 +180,7 @@ fn rocket() -> Rocket {
         addreslocation, reslocation, modifyreslocation, reslocations,
         locations, addlocation_page, addlocation,
         transforms, transform, addtransform_page, addtransform, modifytransform, addline, deleteline,
-        addparam, addresparam, resparams])
+        parameters, addparameter, addresparameter, resparameters, addparameter_page])
         .mount("/static", rocket_contrib::serve::StaticFiles::from("static"))
 }
 
