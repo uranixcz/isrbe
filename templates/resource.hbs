@@ -6,7 +6,7 @@
                 <td><input type="text" name="name" id="name" value="{{resource.name}}" required autofocus/></td>
             </tr>
             <tr>
-                <td><label for="type_id">Resource type</label></td>
+                <td><label for="type_id">Type (unused)</label></td>
                 <td>
                     <select name="type_id" id="type_id" required>
                         {{#if resource}}<option value="{{resource.type_id}}" selected>{{resource.type_name}}</option>{{/if}}

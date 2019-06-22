@@ -1,5 +1,5 @@
 {{#*inline "page"}}
-    <form action="/modifylocation" method="get" accept-charset="utf-8">
+    <form action="/modifyreslocation" method="get" accept-charset="utf-8">
         <table>
             <tr><th colspan="2">Modify resource location</th></tr>
             <tr>
@@ -9,10 +9,9 @@
             <tr>
                 <td><label for="unit">Unit</label></td>
                 <td>
-                    <select name="unit" id="unit" required>
+                    <select name="unit" id="unit" disabled>
                         <option value="{{location.unit_id}}" selected>Unchanged ({{location.unit}})</option>
-                        <option value="0">Number</option>
-                        {{#each quantities}}
+                        {{#each parameters}}
                             <option value="{{id}}">{{name}} ({{unit}})</option>
                         {{/each}}
                     </select>
@@ -20,12 +19,12 @@
             </tr>
             <tr>
                 <td><label for="radius">Radius</label></td>
-                <td><input type="number" id="radius" name="radius" min="0" value="{{location.radius}}" required /></td>
+                <td><input type="number" id="radius" name="radius" min="0" value="{{location.radius}}" disabled /></td>
             </tr>
             <tr>
-                <td><label for="location">Location</label></td>
+                <td><label for="location">Location (fixme)</label></td>
                 <td>
-                    <select name="location" id="location" required>
+                    <select name="location" id="location" disabled>
                         {{#each coordinates}}
                             <option value="{{id}}">lat:{{lat}} lon:{{lon}}</option>
                         {{/each}}

@@ -5,10 +5,11 @@ use mysql as my;
 use my::prelude::FromRow;
 use std::fs;
 use crate::{catch_mysql_err, match_id, ERROR_PAGE, Config, Quantity};
+use crate::parameters::Parameter;
 
 #[derive(Serialize)]
 struct LocationContext<'a> {
-    quantities: &'a Vec<Quantity>,
+    parameters: Vec<Parameter>,
     location: Option<ResLocation<'a>>,
     coordinates: Vec<Coordinates>,
 }
@@ -84,8 +85,7 @@ pub fn addreslocation(amount: f64, res_param: u64, radius: u64, location: u64, c
 
 #[get("/reslocation/<id>")]
 pub fn reslocation(id: u64, config: State<Config>, conn: State<my::Pool>) -> Template {
-    let mut query_result = conn.prep_exec("SELECT id, loc_val, loc_radius, location.lat, location.lon, res_param_id, \"\" \
-    FROM resource_location JOIN location ON loc_id = location.id WHERE id = ?", (id,));
+    let mut query_result = conn.prep_exec(fs::read_to_string("sql/reslocation.sql").expect("file error"), (id,));
     let vec: Result<Vec<ResLocation>, String> = catch_mysql_err(query_result);
     if vec.is_err() {
         return Template::render(ERROR_PAGE, vec.unwrap_err().to_string())
@@ -94,6 +94,12 @@ pub fn reslocation(id: u64, config: State<Config>, conn: State<my::Pool>) -> Tem
     location.unit = if location.unit_id == 0 { "" }
     else { &config.quantities[match_id(location.unit_id)].unit };
 
+    /*query_result= conn.prep_exec(fs::read_to_string("sql/reslocation_list.sql").expect("file error"), (id,));
+    let params: Result<Vec<Parameter>, String> = catch_mysql_err(query_result);
+    if params.is_err() {
+        return Template::render(ERROR_PAGE, params.unwrap_err().to_string())
+    }*/
+
     query_result = conn.prep_exec("SELECT id, lat, lon FROM location", ());
     let vec: Result<Vec<Coordinates>, String> = catch_mysql_err(query_result);
     if vec.is_err() {
@@ -101,16 +107,25 @@ pub fn reslocation(id: u64, config: State<Config>, conn: State<my::Pool>) -> Tem
     }
 
     Template::render("reslocation", LocationContext {
-        quantities: &config.quantities,
+        parameters: Vec::new(),
         location: Some(location),
         coordinates: vec.unwrap(),
     })
 }
 
-#[get("/modifyreslocation?<id>&<amount>&<unit>&<radius>&<location>")]
-pub fn modifyreslocation(id: u64, amount: f64, unit: u64, radius: u64, location: u64, conn: State<my::Pool>) -> Flash<Redirect> {
+/*#[get("/modifyreslocation?<id>&<amount>&<res_param>&<radius>&<location>")]
+pub fn modifyreslocation(id: u64, amount: f64, res_param: u64, radius: u64, location: u64, conn: State<my::Pool>) -> Flash<Redirect> {
     let query_result = conn.prep_exec("UPDATE resource_location SET res_param_id = ?, loc_id = ?, loc_radius = ?, loc_val = ? WHERE id = ?",
-                                      (unit, location, radius, amount, id));
+                                      (res_param, location, radius, amount, id));
+    match query_result {
+        Ok(_) => Flash::success(Redirect::to("/"), "Resource location modified."),
+        Err(e) => Flash::error(Redirect::to("/"), e.to_string())
+    }
+}*/
+#[get("/modifyreslocation?<id>&<amount>")]
+pub fn modifyreslocation(id: u64, amount: f64, conn: State<my::Pool>) -> Flash<Redirect> {
+    let query_result = conn.prep_exec("UPDATE resource_location SET loc_val = ? WHERE id = ?",
+                                      (amount, id));
     match query_result {
         Ok(_) => Flash::success(Redirect::to("/"), "Resource location modified."),
         Err(e) => Flash::error(Redirect::to("/"), e.to_string())
