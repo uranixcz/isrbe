@@ -6,6 +6,31 @@ use my::prelude::FromRow;
 use std::fs;
 use crate::{catch_mysql_err, match_id, ERROR_PAGE, Config, Quantity};
 
+#[derive(Serialize, Debug)]
+pub struct Parameter {
+    id: u64,
+    name: String,
+    unit: String,
+}
+impl FromRow for Parameter {
+    fn from_row(_row: my::Row) -> Self {
+        unimplemented!()
+    }
+    fn from_row_opt(row: my::Row) -> Result<Self, my::FromRowError> {
+        let deconstruct = my::from_row_opt(row);
+        if deconstruct.is_err() {
+            Err(deconstruct.unwrap_err())
+        } else {
+            let (id, name, unit) = deconstruct.unwrap();
+            Ok(Parameter {
+                id,
+                name,
+                unit
+            })
+        }
+    }
+}
+
 #[get("/parameters")]
 pub fn parameters(config: State<Config>, conn: State<my::Pool>) -> Template {
     #[derive(Serialize, Debug)]

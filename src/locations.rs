@@ -72,10 +72,10 @@ impl FromRow for Coordinates {
     }
 }
 
-#[get("/addreslocation?<resource_id>&<amount>&<unit>&<radius>&<location>")]
-pub fn addreslocation(resource_id: u64, amount: f64, unit: u64, radius: u64, location: u64, conn: State<my::Pool>) -> Flash<Redirect> {
-    let query_result = conn.prep_exec("INSERT INTO resource_location (res_id, res_param_id, loc_id, loc_radius, loc_val) VALUES (?, ?, ?, ?, ?)",
-                                      (resource_id, unit, location, radius, amount));
+#[get("/addreslocation?<amount>&<res_param>&<radius>&<location>")]
+pub fn addreslocation(amount: f64, res_param: u64, radius: u64, location: u64, conn: State<my::Pool>) -> Flash<Redirect> {
+    let query_result = conn.prep_exec("INSERT INTO resource_location (res_param_id, loc_id, loc_radius, loc_val) VALUES (?, ?, ?, ?)",
+                                      (res_param, location, radius, amount));
     match query_result {
         Ok(_) => Flash::success(Redirect::to("/"), "Resource location added."),
         Err(e) => Flash::error(Redirect::to("/"), e.to_string())

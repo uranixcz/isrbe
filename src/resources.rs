@@ -6,11 +6,12 @@ use my::prelude::FromRow;
 use std::fs;
 use crate::{catch_mysql_err, match_id, ERROR_PAGE, Config, ResourceType, Quantity};
 use crate::locations::{ResLocation, Coordinates};
+use crate::parameters::Parameter;
 
 #[derive(Serialize)]
 struct ResourceContext<'a> {
     types: &'a Vec<ResourceType>,
-    quantities: &'a Vec<Quantity>,
+    parameters: Vec<Parameter>,
     resource: Option<Resource<'a>>,
     coordinates: Vec<Coordinates>,
 }
@@ -86,7 +87,7 @@ pub fn resources(conn: State<my::Pool>) -> Template {
 
 #[get("/addresource")]
 pub fn addresource_page(config: State<Config>) -> Template {
-    Template::render("resource", ResourceContext { types: &config.resource_types, quantities: &Vec::new(), resource: None, coordinates: Vec::new() })
+    Template::render("resource", ResourceContext { types: &config.resource_types, parameters: Vec::new(), resource: None, coordinates: Vec::new() })
 }
 
 #[get("/addresource?<name>&<type_id>")]
@@ -108,28 +109,23 @@ pub fn resource(id: u64, config: State<Config>, conn: State<my::Pool>) -> Templa
     let mut resource = vec.unwrap().remove(0);
     resource.type_name = &config.resource_types[match_id(resource.type_id)].type_name;
 
-    /*query_result = conn.prep_exec("SELECT id, loc_val, loc_radius, location.lat, location.lon, res_param_id, \"\" \
-    FROM resource_location JOIN location ON loc_id = location.id WHERE res_id = ?", (id,));
-    let vec: Result<Vec<ResLocation>, String> = catch_mysql_err(query_result);
-    if vec.is_err() {
-        return Template::render(ERROR_PAGE, vec.unwrap_err().to_string())
+    query_result= conn.prep_exec(fs::read_to_string("sql/addreslocation.sql").expect("file error"), (id,));
+    let params: Result<Vec<Parameter>, String> = catch_mysql_err(query_result);
+    if params.is_err() {
+        return Template::render(ERROR_PAGE, params.unwrap_err().to_string())
     }
-    resource.locations = vec.unwrap();
-    for location in resource.locations.iter_mut() {
-        location.unit = if location.unit_id == 0 { "" }
-        else { &config.quantities[match_id(location.unit_id)].unit }
-    }*/
+
     query_result = conn.prep_exec("SELECT id, lat, lon FROM location", ());
-    let vec: Result<Vec<Coordinates>, String> = catch_mysql_err(query_result);
-    if vec.is_err() {
-        return Template::render(ERROR_PAGE, vec.unwrap_err().to_string())
+    let coords: Result<Vec<Coordinates>, String> = catch_mysql_err(query_result);
+    if coords.is_err() {
+        return Template::render(ERROR_PAGE, coords.unwrap_err().to_string())
     }
 
     Template::render("resource", ResourceContext {
         types: &config.resource_types,
-        quantities: &config.quantities,
+        parameters: params.unwrap(),
         resource: Some(resource),
-        coordinates: vec.unwrap(),
+        coordinates: coords.unwrap(),
     })
 }
 
