@@ -14,6 +14,7 @@ struct ResourceContext<'a> {
     parameters: Vec<Parameter>,
     resource: Option<Resource<'a>>,
     coordinates: Vec<Coordinates>,
+    parameter_list: Vec<(u64, String, String)>,
 }
 
 #[derive(Serialize, Debug)]
@@ -87,7 +88,7 @@ pub fn resources(conn: State<my::Pool>) -> Template {
 
 #[get("/addresource")]
 pub fn addresource_page(config: State<Config>) -> Template {
-    Template::render("resource", ResourceContext { types: &config.resource_types, parameters: Vec::new(), resource: None, coordinates: Vec::new() })
+    Template::render("resource", ResourceContext { types: &config.resource_types, parameters: Vec::new(), resource: None, coordinates: Vec::new(), parameter_list: vec![] })
 }
 
 #[get("/addresource?<name>&<type_id>")]
@@ -109,16 +110,26 @@ pub fn resource(id: u64, config: State<Config>, conn: State<my::Pool>) -> Templa
     let mut resource = vec.unwrap().remove(0);
     resource.type_name = &config.resource_types[match_id(resource.type_id)].type_name;
 
+    // get list of assigned parameters for location form
     query_result= conn.prep_exec(fs::read_to_string("sql/addreslocation.sql").expect("file error"), (id,));
     let params: Result<Vec<Parameter>, String> = catch_mysql_err(query_result);
     if params.is_err() {
         return Template::render(ERROR_PAGE, params.unwrap_err().to_string())
     }
 
+    // get list of locations for location form
     query_result = conn.prep_exec("SELECT id, lat, lon FROM location", ());
     let coords: Result<Vec<Coordinates>, String> = catch_mysql_err(query_result);
     if coords.is_err() {
         return Template::render(ERROR_PAGE, coords.unwrap_err().to_string())
+    }
+
+    // get list of all parameters for assignment form
+    // TODO move param_type to RAM on startup; Possible optimization to cache this list for addreslocation.sql above.
+    query_result = conn.prep_exec("SELECT param.id, param.name, param_type.name FROM param JOIN param_type ON param.type = param_type.id", ());
+    let parlist: Result<Vec<(u64, String, String)>, String> = catch_mysql_err(query_result);
+    if parlist.is_err() {
+        return Template::render(ERROR_PAGE, parlist.unwrap_err().to_string())
     }
 
     Template::render("resource", ResourceContext {
@@ -126,6 +137,7 @@ pub fn resource(id: u64, config: State<Config>, conn: State<my::Pool>) -> Templa
         parameters: params.unwrap(),
         resource: Some(resource),
         coordinates: coords.unwrap(),
+        parameter_list: parlist.unwrap(),
     })
 }
 

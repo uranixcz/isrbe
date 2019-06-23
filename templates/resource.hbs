@@ -24,6 +24,33 @@
     </form>
     {{#if resource}}
         <br>
+        <form action="/addresparameter" method="get" accept-charset="utf-8">
+            <table>
+                <tr><th colspan="2">Assign parameter</th></tr>
+                <tr>
+                    <td><label for="param_id">Parameter</label></td>
+                    <td>
+                        <select name="param_id" id="param_id" required>
+                            {{#each parameter_list}}
+                                <option value="{{0}}">{{1}} ({{2}})</option>
+                            {{/each}}
+                        </select>
+                    </td>
+                </tr>
+                <tr>
+                    <td><abbr title="Is this parameter used to transport this resource? Only numeric parameters are allowed.">Movable?</abbr></td>
+                    <td><input type="checkbox" name="movable" value="false"></td>
+                </tr>
+                <tr>
+                    <td><a href="/resource/{{resource.id}}/parameters">List existing</a></td>
+                    <td>
+                        <input type="hidden" name="resource_id" value="{{resource.id}}" />
+                        <input type="submit" value="Submit" />
+                    </td>
+                </tr>
+            </table>
+        </form>
+        <br>
         <form action="/addreslocation" method="get" accept-charset="utf-8">
             <table>
                 <tr><th colspan="2">New resource location</th></tr>
