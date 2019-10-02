@@ -106,11 +106,18 @@ pub fn addresparameter(resource_id: u64, param_id: u64, movable: bool, conn: Sta
 #[get("/resource/<id>/parameters")]
 pub fn resparameters(id: u64, conn: State<my::Pool>) -> Template {
     #[derive(Serialize, Debug)]
+    enum Value {
+        Number(f64),
+        Text(String),
+        Resource(u64),
+        Empty
+    }
+    #[derive(Serialize, Debug)]
     struct Parameter {
         id: u64,
         name: String,
-        value: f64,
-        unit: String,
+        value: Value,
+        unit: Option<String>,
         movable: bool,
     }
     impl FromRow for Parameter {
@@ -122,7 +129,13 @@ pub fn resparameters(id: u64, conn: State<my::Pool>) -> Template {
             if deconstruct.is_err() {
                 Err(deconstruct.unwrap_err())
             } else {
-                let (id, name, value, unit, movable) = deconstruct.unwrap();
+                let (id, name, val_f64, val_text, val_res, unit, movable) = deconstruct.unwrap();
+                let value = match (val_f64, val_text, val_res) {
+                    (Some(x), None, None) => Value::Number(x),
+                    (None, Some(x), None) => Value::Text(x),
+                    (None, None, Some(x)) => Value::Resource(x),
+                    _ => Value::Empty
+                };
                 Ok(Parameter {
                     id,
                     name,

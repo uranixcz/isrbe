@@ -5,7 +5,21 @@
         <tr>
             <td>{{id}}</td>
             <td>{{name}}</td>
-            <td>{{value}} {{unit}}</td>
+            <td>
+                {{#if value.Number}}
+                    {{value.Number}}
+                {{else}}
+                    {{#if value.Text}}
+                        {{value.Text}}
+                    {{else}}
+                        {{#if value.Resource}}
+                            {{value.Resource}}
+                        {{else}}
+                            -
+                        {{/if}}
+                    {{/if}}
+                {{/if}} {{unit}}
+            </td>
             <td>{{movable}}</td>
         </tr>
     {{/each}}
