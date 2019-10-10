@@ -1,6 +1,6 @@
 {{#*inline "page"}}
 <table>
-    <tr><th>ID</th><th>Name</th><th>Value</th><th>Movable?</th></tr>
+    <tr><th>ID</th><th>Name</th><th>Value</th><th>Transportable?</th><th>Operation</th></tr>
     {{#each .}}
         <tr>
             <td>{{id}}</td>
@@ -21,6 +21,7 @@
                 {{/if}} {{unit}}
             </td>
             <td>{{movable}}</td>
+            <td><a href="/resource/{{res_id}}/parameter/{{id}}/addvalue">Add value</a></td>
         </tr>
     {{/each}}
 </table>

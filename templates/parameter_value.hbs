@@ -1,0 +1,27 @@
+{{#*inline "page"}}
+    <form action="{{#if res_parameter}}/resource/{{res_id}}/parameter/{{param_id}}/modifyvalue{{else}}/resource/{{res_id}}/parameter/{{param_id}}/addvalue{{/if}}" method="get" accept-charset="utf-8">
+        <table>
+            <tr>
+                <td><label for="value">Value</label></td>
+                <td><input type="text" name="value" id="value" value="{{value.val}}" required autofocus/></td>
+            </tr>
+            <tr>
+                <td><label for="other_id">Dependency (for type Resource)</label></td>
+                <td>
+                    <select name="other_id" id="other_id" required>
+                        {{#if res_parameter}}<option value="{{res_parameter.id}}" selected>{{res_parameter.name}}</option>{{/if}}
+                        {{#each resources}}
+                            <option value="{{id}}">{{name}} {{unit}}</option>
+                        {{/each}}
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                </td>
+                <td><input type="submit" value="Submit" /></td>
+            </tr>
+        </table>
+    </form>
+{{/inline}}
+{{> layout}}

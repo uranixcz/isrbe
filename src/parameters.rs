@@ -31,6 +31,14 @@ impl FromRow for Parameter {
     }
 }
 
+#[derive(Serialize, Debug)]
+enum Value {
+    Number(f64),
+    Text(String),
+    Resource(u64),
+    Empty
+}
+
 #[get("/parameters")]
 pub fn parameters(config: State<Config>, conn: State<my::Pool>) -> Template {
     #[derive(Serialize, Debug)]
@@ -106,19 +114,13 @@ pub fn addresparameter(resource_id: u64, param_id: u64, movable: bool, conn: Sta
 #[get("/resource/<id>/parameters")]
 pub fn resparameters(id: u64, conn: State<my::Pool>) -> Template {
     #[derive(Serialize, Debug)]
-    enum Value {
-        Number(f64),
-        Text(String),
-        Resource(u64),
-        Empty
-    }
-    #[derive(Serialize, Debug)]
     struct Parameter {
         id: u64,
         name: String,
         value: Value,
         unit: Option<String>,
         movable: bool,
+        res_id: u64,
     }
     impl FromRow for Parameter {
         fn from_row(_row: my::Row) -> Self {
@@ -142,6 +144,7 @@ pub fn resparameters(id: u64, conn: State<my::Pool>) -> Template {
                     value,
                     unit,
                     movable,
+                    res_id: 0,
                 })
             }
         }
@@ -151,7 +154,59 @@ pub fn resparameters(id: u64, conn: State<my::Pool>) -> Template {
 
     let vec: Result<Vec<Parameter>, String> = catch_mysql_err(query_result);
     match vec {
-        Ok(v) => Template::render("resparams", v),
+        Ok(mut v) => {
+            for i in v.iter_mut() {
+                i.res_id = id;
+            }
+            Template::render("resparams", v)
+        },
         Err(e) => Template::render(ERROR_PAGE, e)
+    }
+}
+
+#[get("/resource/<res_id>/parameter/<param_id>/addvalue", rank = 4)]
+pub fn addresparametervalue_page(res_id: u64, param_id: u64, conn: State<my::Pool>) -> Template {
+    #[derive(Serialize, Debug)]
+    struct ParameterContext {
+        resources: Vec<Parameter>,
+        res_id: u64,
+        param_id: u64,
+    }
+    let query_result = conn.prep_exec("SELECT resource_param.id, resource.name, param.name FROM resource_param JOIN resource ON resource.id = res_id JOIN param ON param.id = param_id", ());
+    let vec: Result<Vec<Parameter>, String> = catch_mysql_err(query_result);
+    match vec {
+        Ok(v) => Template::render("parameter_value", ParameterContext {
+            resources: v,
+            res_id,
+            param_id
+        }),
+        Err(e) => Template::render(ERROR_PAGE, e)
+    }
+}
+//TODO delete other_id from template
+#[get("/resource/<res_id>/parameter/<param_id>/addvalue?<value>&<other_id>")]
+pub fn addresparametervaluenumber(res_id: u64, param_id: u64, value: f64, other_id: u64, conn: State<my::Pool>) -> Flash<Redirect> {
+    let query_result = conn.prep_exec("INSERT INTO param_val (res_param_id, val_float) VALUES ((SELECT id FROM resource_param WHERE res_id = ? AND param_id = ?), ?)", (res_id, param_id, value));
+    match query_result {
+        Ok(_) => Flash::success(Redirect::to("/"), "Parameter value added."),
+        Err(e) => Flash::error(Redirect::to("/"), e.to_string())
+    }
+}
+//TODO delete other_id from template
+#[get("/resource/<res_id>/parameter/<param_id>/addvalue?<value>&<other_id>", rank = 2)]
+pub fn addresparametervaluetext(res_id: u64, param_id: u64, value: String, other_id: u64, conn: State<my::Pool>) -> Flash<Redirect> {
+    let query_result = conn.prep_exec("INSERT INTO param_val (res_param_id, val_text) VALUES ((SELECT id FROM resource_param WHERE res_id = ? AND param_id = ?), ?)", (res_id, param_id, value));
+    match query_result {
+        Ok(_) => Flash::success(Redirect::to("/"), "Parameter value added."),
+        Err(e) => Flash::error(Redirect::to("/"), e.to_string())
+    }
+}
+
+#[get("/resource/<res_id>/parameter/<param_id>/addvalue?<value>&<other_id>", rank = 3)]
+pub fn addresparametervalueresource(res_id: u64, param_id: u64, value: f64, other_id: u64, conn: State<my::Pool>) -> Flash<Redirect> {
+    let query_result = conn.prep_exec("INSERT INTO param_val (res_param_id, val_float, val_res) VALUES ((SELECT id FROM resource_param WHERE res_id = ? AND param_id = ?), ?)", (res_id, param_id, value, other_id));
+    match query_result {
+        Ok(_) => Flash::success(Redirect::to("/"), "Parameter value added."),
+        Err(e) => Flash::error(Redirect::to("/"), e.to_string())
     }
 }
