@@ -19,6 +19,7 @@
                 <td><label for="type_id">unit</label></td>
                 <td>
                     <select name="unit" id="unit" required>
+                        <option value="0">None</option>
                         {{#each .}}
                             <option value="{{id}}">{{name}} ({{unit}})</option>
                         {{/each}}

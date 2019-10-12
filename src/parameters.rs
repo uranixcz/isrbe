@@ -91,7 +91,10 @@ pub fn addparameter_page(config: State<Config>) -> Template {
 }
 
 #[get("/addparameter?<name>&<type_id>&<unit>")]
-pub fn addparameter(name: String, type_id: u64, unit: u64, conn: State<my::Pool>) -> Flash<Redirect> {
+pub fn addparameter(name: String, type_id: u64, mut unit: u64, conn: State<my::Pool>) -> Flash<Redirect> {
+    if type_id != 1 {
+        unit = 0;
+    }
     let query_result = conn.prep_exec("INSERT INTO param (name, type, qty_id) VALUES (?, ?, ?)", (name, type_id, unit));
     match query_result {
         Ok(_) => Flash::success(Redirect::to("/"), "Parameter added."),
