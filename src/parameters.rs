@@ -35,7 +35,7 @@ impl FromRow for Parameter {
 enum Value {
     Number(f64),
     Text(String),
-    Resource(u64),
+    Resource(f64, u64),
     Empty
 }
 
@@ -104,6 +104,7 @@ pub fn addparameter(name: String, type_id: u64, mut unit: u64, conn: State<my::P
 
 #[get("/addresparameter?<resource_id>&<param_id>&<movable>")]
 pub fn addresparameter(resource_id: u64, param_id: u64, movable: bool, conn: State<my::Pool>) -> Flash<Redirect> {
+    //TODO movable only by parameter type: number
     let query_result = conn.prep_exec("INSERT INTO resource_param (res_id, param_id, is_movable) VALUES (?, ?, ?)",
                                       (resource_id, param_id, movable));
     match query_result {
@@ -138,7 +139,7 @@ pub fn resparameters(id: u64, conn: State<my::Pool>) -> Template {
                 let value = match (val_f64, val_text, val_res) {
                     (Some(x), None, None) => Value::Number(x),
                     (None, Some(x), None) => Value::Text(x),
-                    (None, None, Some(x)) => Value::Resource(x),
+                    (Some(x), None, Some(y)) => Value::Resource(x, y),
                     _ => Value::Empty
                 };
                 Ok(Parameter {
@@ -168,30 +169,41 @@ pub fn addresparametervalue_page(res_param_id: u64, conn: State<my::Pool>) -> Te
     struct ParameterContext {
         resources: Vec<Parameter>,
         res_param_id: u64,
+        is_type_resource: bool,
     }
-    let query_result = conn.prep_exec("SELECT resource_param.id, resource.name, param.name FROM resource_param \
-    JOIN resource ON resource.id = res_id JOIN param ON param.id = param_id", ());
+    let mut query_result = conn.prep_exec("SELECT resource_param.id, resource.name, param.name FROM resource_param \
+    JOIN resource ON resource.id = res_id JOIN param ON param.id = param_id \
+    WHERE is_movable = 1 AND res_id != (SELECT res_id FROM resource_param WHERE id = ?)", (res_param_id,));
     let vec: Result<Vec<Parameter>, String> = catch_mysql_err(query_result);
-    match vec {
-        Ok(v) => Template::render("parameter_value", ParameterContext {
-            resources: v,
-            res_param_id,
-        }),
-        Err(e) => Template::render(ERROR_PAGE, e)
+    if vec.is_err() {
+        return Template::render(ERROR_PAGE, vec.unwrap_err().to_string())
     }
+    query_result = conn.prep_exec("SELECT type FROM resource_param JOIN param ON param.id = resource_param.param_id WHERE resource_param.id = ?", (res_param_id,));
+    let param_type: Result<Vec<u64>, String> = catch_mysql_err(query_result);
+    if param_type.is_err() {
+        return Template::render(ERROR_PAGE, param_type.unwrap_err().to_string())
+    }
+
+    Template::render("parameter_value", ParameterContext {
+        resources: vec.unwrap(),
+        res_param_id,
+        is_type_resource: if param_type.unwrap()[0] == 3 { // 3 is parameter type: resource
+            true
+        } else { false },
+    })
 }
-//TODO delete other_id from template
-#[get("/resource/parameter/<res_param_id>/addvalue?<value>&<other_id>")]
-pub fn addresparametervaluenumber(res_param_id: u64, value: f64, other_id: u64, conn: State<my::Pool>) -> Flash<Redirect> {
+
+#[get("/resource/parameter/<res_param_id>/addvalue?<value>", rank = 3)] //TODO no more than one value if transportable
+pub fn addresparametervaluenumber(res_param_id: u64, value: f64, conn: State<my::Pool>) -> Flash<Redirect> {
     let query_result = conn.prep_exec("INSERT INTO param_val (res_param_id, val_float) VALUES (?, ?)", (res_param_id, value));
     match query_result {
         Ok(_) => Flash::success(Redirect::to("/"), "Parameter value added."),
         Err(e) => Flash::error(Redirect::to("/"), e.to_string())
     }
 }
-//TODO delete other_id from template
-#[get("/resource/parameter/<res_param_id>/addvalue?<value>&<other_id>", rank = 2)]
-pub fn addresparametervaluetext(res_param_id: u64, value: String, other_id: u64, conn: State<my::Pool>) -> Flash<Redirect> {
+
+#[get("/resource/parameter/<res_param_id>/addvalue?<value>", rank = 2)]
+pub fn addresparametervaluetext(res_param_id: u64, value: String, conn: State<my::Pool>) -> Flash<Redirect> {
     let query_result = conn.prep_exec("INSERT INTO param_val (res_param_id, val_text) VALUES (?, ?)", (res_param_id, value));
     match query_result {
         Ok(_) => Flash::success(Redirect::to("/"), "Parameter value added."),
@@ -199,9 +211,9 @@ pub fn addresparametervaluetext(res_param_id: u64, value: String, other_id: u64,
     }
 }
 
-#[get("/resource/parameter/<res_param_id>/addvalue?<value>&<other_id>", rank = 3)]
-pub fn addresparametervalueresource(res_param_id: u64, value: f64, other_id: u64, conn: State<my::Pool>) -> Flash<Redirect> {
-    let query_result = conn.prep_exec("INSERT INTO param_val (res_param_id, val_float, val_res) VALUES (?, ?, ?)", (res_param_id, value, other_id));
+#[get("/resource/parameter/<res_param_id>/addvalue?<value>&<dependency>", rank = 1)]
+pub fn addresparametervalueresource(res_param_id: u64, value: f64, dependency: u64, conn: State<my::Pool>) -> Flash<Redirect> {
+    let query_result = conn.prep_exec("INSERT INTO param_val (res_param_id, val_float, val_res) VALUES (?, ?, ?)", (res_param_id, value, dependency));
     match query_result {
         Ok(_) => Flash::success(Redirect::to("/"), "Parameter value added."),
         Err(e) => Flash::error(Redirect::to("/"), e.to_string())

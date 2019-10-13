@@ -35,12 +35,12 @@ CREATE TABLE `param` (
   `qty_id` bigint(20) unsigned NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `name` (`name`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 LOCK TABLES `param` WRITE;
 /*!40000 ALTER TABLE `param` DISABLE KEYS */;
-INSERT INTO `param` VALUES (1,'amount',1,0),(2,'weight',1,2),(3,'length',1,1),(4,'time',1,3),(5,'quality',2,0);
+INSERT INTO `param` VALUES (1,'amount',1,0),(2,'weight',1,2),(3,'length',1,1),(4,'time',1,3),(5,'quality',2,0),(6,'dependency',3,0);
 /*!40000 ALTER TABLE `param` ENABLE KEYS */;
 UNLOCK TABLES;
 DROP TABLE IF EXISTS `param_type`;
@@ -68,12 +68,12 @@ CREATE TABLE `param_val` (
   `val_text` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
   `val_res` bigint(20) unsigned DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 LOCK TABLES `param_val` WRITE;
 /*!40000 ALTER TABLE `param_val` DISABLE KEYS */;
-INSERT INTO `param_val` VALUES (1,1,1,NULL,NULL),(2,6,NULL,'bad',NULL);
+INSERT INTO `param_val` VALUES (1,1,1,NULL,NULL),(2,6,NULL,'bad',NULL),(3,8,99,NULL,7);
 /*!40000 ALTER TABLE `param_val` ENABLE KEYS */;
 UNLOCK TABLES;
 DROP TABLE IF EXISTS `quantity`;
@@ -122,7 +122,7 @@ CREATE TABLE `resource` (
 
 LOCK TABLES `resource` WRITE;
 /*!40000 ALTER TABLE `resource` DISABLE KEYS */;
-INSERT INTO `resource` VALUES (1,'potato',4),(2,'hranol dřevěný',4),(3,'hřebík ocelový',4),(4,'water',1),(5,'acqacq',1),(6,'acqacq3',2),(8,'Flint',1),(9,'flour',1),(10,'pizza',4);
+INSERT INTO `resource` VALUES (1,'potato',4),(4,'water',1),(9,'flour',1),(10,'pizza',4);
 /*!40000 ALTER TABLE `resource` ENABLE KEYS */;
 UNLOCK TABLES;
 DROP TABLE IF EXISTS `resource_location`;
@@ -155,12 +155,12 @@ CREATE TABLE `resource_param` (
   `is_movable` tinyint(1) NOT NULL COMMENT 'upraveno MM',
   PRIMARY KEY (`id`),
   UNIQUE KEY `res_id` (`res_id`,`param_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci COMMENT='prejemenovano z resource_quantity';
+) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci COMMENT='prejemenovano z resource_quantity';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 LOCK TABLES `resource_param` WRITE;
 /*!40000 ALTER TABLE `resource_param` DISABLE KEYS */;
-INSERT INTO `resource_param` VALUES (1,1,2,11,1),(2,1,3,11,0),(5,1,4,11,0),(6,1,5,11,0);
+INSERT INTO `resource_param` VALUES (1,1,2,11,1),(2,1,3,11,0),(5,1,4,11,0),(6,1,5,11,0),(7,4,2,11,1),(8,1,6,11,0);
 /*!40000 ALTER TABLE `resource_param` ENABLE KEYS */;
 UNLOCK TABLES;
 DROP TABLE IF EXISTS `resource_type`;

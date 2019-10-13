@@ -5,10 +5,11 @@
                 <td><label for="value">Value</label></td>
                 <td><input type="text" name="value" id="value" value="{{value.val}}" required autofocus/></td>
             </tr>
+            {{#if is_type_resource}}
             <tr>
-                <td><label for="other_id">Dependency (for type Resource)</label></td>
+                <td><label for="dependency">Dependency</label></td>
                 <td>
-                    <select name="other_id" id="other_id" required>
+                    <select name="dependency" id="dependency" required>
                         {{#if res_parameter}}<option value="{{res_parameter.id}}" selected>{{res_parameter.name}}</option>{{/if}}
                         {{#each resources}}
                             <option value="{{id}}">{{name}} {{unit}}</option>
@@ -16,6 +17,7 @@
                     </select>
                 </td>
             </tr>
+            {{/if}}
             <tr>
                 <td>
                 </td>
