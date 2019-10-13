@@ -1,5 +1,5 @@
 {{#*inline "page"}}
-    <form action="{{#if res_parameter}}/resource/{{res_id}}/parameter/{{param_id}}/modifyvalue{{else}}/resource/{{res_id}}/parameter/{{param_id}}/addvalue{{/if}}" method="get" accept-charset="utf-8">
+    <form action="{{#if res_parameter}}/resource/parameter/{{res_param_id}}/modifyvalue{{else}}/resource/parameter/{{res_param_id}}/addvalue{{/if}}" method="get" accept-charset="utf-8">
         <table>
             <tr>
                 <td><label for="value">Value</label></td>

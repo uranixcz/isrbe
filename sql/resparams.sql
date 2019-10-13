@@ -1,4 +1,4 @@
-SELECT param.id, param.name, param_val.val_float, param_val.val_text, param_val.val_res, quantity.unit, is_movable
+SELECT param.id, param.name, param_val.val_float, param_val.val_text, param_val.val_res, quantity.unit, is_movable, resource_param.id
 FROM resource_param
 JOIN param ON param.id = resource_param.param_id
 LEFT JOIN param_val ON param_val.res_param_id = resource_param.id
