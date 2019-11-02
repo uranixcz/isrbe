@@ -145,10 +145,13 @@ pub fn transform(id: u64, config: State<Config>, conn: State<my::Pool>) -> Templ
     let mut transform = vec.unwrap().remove(0);
     transform.type_name = &config.transform_types[match_id(transform.type_id)].type_name;
 
-    query_result = conn.prep_exec("SELECT id, val, 0, 0.0, location.lat, location.lon, resource_location.loc_radius, qty_id, resource.name FROM transform_line \
-    JOIN resource_location ON transform_line.res_loc_id = resource_location.res_loc_id \
+    query_result = conn.prep_exec("SELECT transform_line.id, val, 0, 0.0, location.lat, location.lon, resource_location.loc_radius, qty_id, resource.name FROM transform_line \
+    JOIN resource_location ON transform_line.res_loc_id = resource_location.id \
     JOIN location ON resource_location.loc_id = location.id \
-    JOIN resource ON resource_location.res_id = resource.id WHERE transform_hdr_id = ?", (id,));
+    JOIN resource_param ON resource_location.res_param_id = resource_param.id \
+    JOIN resource ON resource_param.res_id = resource.id \
+    JOIN param ON resource_param.param_id = param.id \
+    WHERE transform_hdr_id = ?", (id,));
     let vec: Result<Vec<TransformLine>, String> = catch_mysql_err(query_result);
     if vec.is_err() {
         return Template::render(ERROR_PAGE, vec.unwrap_err().to_string())
@@ -159,8 +162,10 @@ pub fn transform(id: u64, config: State<Config>, conn: State<my::Pool>) -> Templ
         else { &config.quantities[match_id(line.location.unit_id)].unit }
     }
 
-    query_result = conn.prep_exec("SELECT res_loc_id, loc_val, loc_radius, location.lat, location.lon, res_param_id, resource.name FROM resource_location \
-    JOIN resource ON resource.id = resource_location.res_id \
+    query_result = conn.prep_exec("SELECT resource_location.id, loc_val, loc_radius, location.lat, location.lon, qty_id, resource.name FROM resource_location \
+    JOIN resource_param ON resource_location.res_param_id = resource_param.id \
+    JOIN resource ON resource_param.res_id = resource.id \
+    JOIN param ON resource_param.param_id = param.id \
     JOIN location ON location.id = loc_id", ());
     let vec: Result<Vec<ResLocation>, String> = catch_mysql_err(query_result);
     if vec.is_err() {
