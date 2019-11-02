@@ -7,18 +7,18 @@
             <td>{{name}}</td>
             <td>
                 {{#if value.Number}}
-                    {{value.Number}}
+                    {{value.Number}} {{unit}}
                 {{else}}
                     {{#if value.Text}}
                         {{value.Text}}
                     {{else}}
                         {{#if value.Resource}}
-                            {{value.Resource.0}} RP#{{value.Resource.1}}
+                            {{value.Resource.0}} {{unit}} {{value.Resource.1}}
                         {{else}}
-                            -
+                            - {{unit}}
                         {{/if}}
                     {{/if}}
-                {{/if}} {{unit}}
+                {{/if}}
             </td>
             <td>{{movable}}</td>
             <td><a href="/resource/parameter/{{res_param_id}}/addvalue">Add value</a></td>

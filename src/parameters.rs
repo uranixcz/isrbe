@@ -35,7 +35,7 @@ impl FromRow for Parameter {
 enum Value {
     Number(f64),
     Text(String),
-    Resource(f64, u64),
+    Resource(f64, String),
     Empty
 }
 
