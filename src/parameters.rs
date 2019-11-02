@@ -6,6 +6,8 @@ use my::prelude::FromRow;
 use std::fs;
 use crate::{catch_mysql_err, match_id, ERROR_PAGE, Config, Quantity};
 
+const PARAM_TYPE_RESOURCE:u64 = 3;
+
 #[derive(Serialize, Debug)]
 pub struct Parameter {
     id: u64,
@@ -104,8 +106,11 @@ pub fn addparameter(name: String, type_id: u64, mut unit: u64, conn: State<my::P
 
 #[get("/addresparameter?<resource_id>&<param_id>&<movable>")]
 pub fn addresparameter(resource_id: u64, param_id: u64, movable: bool, conn: State<my::Pool>) -> Flash<Redirect> {
-    //TODO movable only by parameter type: number
-    let query_result = conn.prep_exec("INSERT INTO resource_param (res_id, param_id, is_movable) VALUES (?, ?, ?)",
+    let mut query_result = conn.prep_exec("SELECT type FROM param WHERE id = ? LIMIT 1", (param_id,));
+    let param_type: Result<Vec<u64>, String> = catch_mysql_err(query_result);
+    if param_type.is_err() { return Flash::error(Redirect::to("/"), param_type.unwrap_err().to_string()) }
+    if movable && param_type.unwrap()[0] != PARAM_TYPE_RESOURCE { return Flash::error(Redirect::to("/"), "Only numeric parameters are transportable.") }
+    query_result = conn.prep_exec("INSERT INTO resource_param (res_id, param_id, is_movable) VALUES (?, ?, ?)",
                                       (resource_id, param_id, movable));
     match query_result {
         Ok(_) => Flash::success(Redirect::to("/"), "Resource parameter added."),
@@ -187,7 +192,7 @@ pub fn addresparametervalue_page(res_param_id: u64, conn: State<my::Pool>) -> Te
     Template::render("parameter_value", ParameterContext {
         resources: vec.unwrap(),
         res_param_id,
-        is_type_resource: if param_type.unwrap()[0] == 3 { // 3 is parameter type: resource
+        is_type_resource: if param_type.unwrap()[0] == PARAM_TYPE_RESOURCE {
             true
         } else { false },
     })

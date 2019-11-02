@@ -21,7 +21,7 @@
                 {{/if}}
             </td>
             <td>{{movable}}</td>
-            <td><a href="/resource/parameter/{{res_param_id}}/addvalue">Add value</a></td>
+        <td>{{#unless movable}}<a href="/resource/parameter/{{res_param_id}}/addvalue">Add value</a>{{/unless}}</td>
         </tr>
     {{/each}}
 </table>
