@@ -122,7 +122,7 @@ CREATE TABLE `resource` (
 
 LOCK TABLES `resource` WRITE;
 /*!40000 ALTER TABLE `resource` DISABLE KEYS */;
-INSERT INTO `resource` VALUES (1,'potato',4),(4,'water',1),(9,'flour',1),(10,'pizza',4);
+INSERT INTO `resource` VALUES (1,'potato',4),(4,'water',1),(9,'flour',1),(10,'bread',4);
 /*!40000 ALTER TABLE `resource` ENABLE KEYS */;
 UNLOCK TABLES;
 DROP TABLE IF EXISTS `resource_location`;
@@ -136,12 +136,12 @@ CREATE TABLE `resource_location` (
   `loc_val` double NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `res_param_id` (`res_param_id`,`loc_id`,`loc_radius`)
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 LOCK TABLES `resource_location` WRITE;
 /*!40000 ALTER TABLE `resource_location` DISABLE KEYS */;
-INSERT INTO `resource_location` VALUES (1,1,1,0,555);
+INSERT INTO `resource_location` VALUES (1,1,1,0,556),(5,7,2,4,1);
 /*!40000 ALTER TABLE `resource_location` ENABLE KEYS */;
 UNLOCK TABLES;
 DROP TABLE IF EXISTS `resource_param`;
@@ -155,7 +155,7 @@ CREATE TABLE `resource_param` (
   `is_movable` tinyint(1) NOT NULL COMMENT 'upraveno MM',
   PRIMARY KEY (`id`),
   UNIQUE KEY `res_id` (`res_id`,`param_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci COMMENT='prejemenovano z resource_quantity';
+) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci COMMENT='prejemenovano z resource_quantity';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 LOCK TABLES `resource_param` WRITE;
@@ -187,11 +187,12 @@ CREATE TABLE `transform_hdr` (
   `type_id` bigint(20) unsigned NOT NULL,
   `ref` varchar(100) COLLATE utf8_unicode_ci NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 LOCK TABLES `transform_hdr` WRITE;
 /*!40000 ALTER TABLE `transform_hdr` DISABLE KEYS */;
+INSERT INTO `transform_hdr` VALUES (1,1,'potatoes');
 /*!40000 ALTER TABLE `transform_hdr` ENABLE KEYS */;
 UNLOCK TABLES;
 DROP TABLE IF EXISTS `transform_line`;
@@ -203,11 +204,12 @@ CREATE TABLE `transform_line` (
   `res_loc_id` bigint(20) unsigned NOT NULL,
   `val` double NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 LOCK TABLES `transform_line` WRITE;
 /*!40000 ALTER TABLE `transform_line` DISABLE KEYS */;
+INSERT INTO `transform_line` VALUES (1,1,5,-99),(2,1,1,1);
 /*!40000 ALTER TABLE `transform_line` ENABLE KEYS */;
 UNLOCK TABLES;
 DROP TABLE IF EXISTS `transform_type`;

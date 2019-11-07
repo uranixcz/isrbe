@@ -26,7 +26,7 @@
         <br>
         <form action="/addline" method="get" accept-charset="utf-8">
             <table>
-                <tr><th colspan="2">Add process</th></tr>
+                <tr><th colspan="2">Add event manually</th></tr>
                 <tr>
                     <td><label for="amount">Amount</label></td>
                     <td><input type="number" id="amount" name="amount" step="0.01" required /></td>
@@ -49,7 +49,7 @@
         </form>
         <br>
         <table>
-            <tr><th colspan="7">List of processes</th></tr>
+            <tr><th colspan="7">Events of this transformation</th></tr>
             <tr><th>ID</th><th>Resource</th><th>Amount</th><th>Latitude</th><th>Longitude</th><th>Radius</th><th>Operation</th></tr>
             {{#each transform.lines}}
                 <tr>
