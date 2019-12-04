@@ -4,7 +4,7 @@ use rocket::response::{Flash, Redirect};
 use mysql as my;
 use my::prelude::FromRow;
 use std::fs;
-use crate::{catch_mysql_err, match_id, ERROR_PAGE, Config, Quantity};
+use crate::{catch_mysql_err, match_id, ERROR_PAGE, get_quantities};
 
 const PARAM_TYPE_RESOURCE:u64 = 3;
 
@@ -42,7 +42,7 @@ enum Value {
 }
 
 #[get("/parameters")]
-pub fn parameters(config: State<Config>, conn: State<my::Pool>) -> Template {
+pub fn parameters(conn: State<my::Pool>) -> Template {
     #[derive(Serialize, Debug)]
     struct Parameter<'a> {
         id: u64,
@@ -79,7 +79,7 @@ pub fn parameters(config: State<Config>, conn: State<my::Pool>) -> Template {
         Ok(mut v) => {
             for p in v.iter_mut() {
                 p.unit = if p.unit_id == 0 { "" }
-                else { &config.quantities[match_id(p.unit_id)].unit }
+                else { &get_quantities()[match_id(p.unit_id)].unit }
             }
             Template::render("parameters", v)
         },
@@ -88,8 +88,8 @@ pub fn parameters(config: State<Config>, conn: State<my::Pool>) -> Template {
 }
 
 #[get("/addparameter")]
-pub fn addparameter_page(config: State<Config>) -> Template {
-    Template::render("parameter", &config.quantities)
+pub fn addparameter_page() -> Template {
+    Template::render("parameter", get_quantities())
 }
 
 #[get("/addparameter?<name>&<type_id>&<unit>")]

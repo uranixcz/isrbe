@@ -4,7 +4,7 @@ use rocket::response::{Flash, Redirect};
 use mysql as my;
 use my::prelude::FromRow;
 use std::fs;
-use crate::{catch_mysql_err, match_id, ERROR_PAGE, Config, Quantity};
+use crate::{catch_mysql_err, match_id, ERROR_PAGE, get_quantities};
 use crate::parameters::Parameter;
 
 #[derive(Serialize)]
@@ -84,7 +84,7 @@ pub fn addreslocation(amount: f64, res_param: u64, radius: u64, location: u64, c
 }
 
 #[get("/reslocation/<id>")]
-pub fn reslocation(id: u64, config: State<Config>, conn: State<my::Pool>) -> Template {
+pub fn reslocation(id: u64, conn: State<my::Pool>) -> Template {
     let mut query_result = conn.prep_exec(fs::read_to_string("sql/reslocation.sql").expect("file error"), (id,));
     let vec: Result<Vec<ResLocation>, String> = catch_mysql_err(query_result);
     if vec.is_err() {
@@ -92,7 +92,7 @@ pub fn reslocation(id: u64, config: State<Config>, conn: State<my::Pool>) -> Tem
     }
     let mut location = vec.unwrap().remove(0);
     location.unit = if location.unit_id == 0 { "" }
-    else { &config.quantities[match_id(location.unit_id)].unit };
+    else { &get_quantities()[match_id(location.unit_id)].unit };
 
     /*query_result= conn.prep_exec(fs::read_to_string("sql/reslocation_list.sql").expect("file error"), (id,));
     let params: Result<Vec<Parameter>, String> = catch_mysql_err(query_result);

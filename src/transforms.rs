@@ -4,7 +4,7 @@ use rocket::response::{Flash, Redirect};
 use mysql as my;
 use my::prelude::FromRow;
 use std::fs;
-use crate::{catch_mysql_err, match_id, ERROR_PAGE, Config, TransformType};
+use crate::{catch_mysql_err, match_id, ERROR_PAGE, TransformType, get_transform_types, get_quantities};
 use crate::locations::ResLocation;
 
 #[derive(Serialize)]
@@ -122,8 +122,8 @@ pub fn transforms(conn: State<my::Pool>) -> Template {
 }
 
 #[get("/addtransform")]
-pub fn addtransform_page(config: State<Config>) -> Template {
-    Template::render("transform", TransformContext { types: &config.transform_types, transform: None, locations: vec![] })
+pub fn addtransform_page() -> Template {
+    Template::render("transform", TransformContext { types: get_transform_types(), transform: None, locations: vec![] })
 }
 
 #[get("/addtransform?<refer>&<type_id>")]
@@ -136,14 +136,14 @@ pub fn addtransform(refer: String, type_id: u64, conn: State<my::Pool>) -> Flash
 }
 
 #[get("/transform/<id>")]
-pub fn transform(id: u64, config: State<Config>, conn: State<my::Pool>) -> Template {
+pub fn transform(id: u64, conn: State<my::Pool>) -> Template {
     let mut query_result = conn.prep_exec("SELECT id, type_id, ref FROM transform_hdr WHERE id = ?", (id,));
     let vec: Result<Vec<Transform>, String> = catch_mysql_err(query_result);
     if vec.is_err() {
         return Template::render(ERROR_PAGE, vec.unwrap_err().to_string())
     }
     let mut transform = vec.unwrap().remove(0);
-    transform.type_name = &config.transform_types[match_id(transform.type_id)].type_name;
+    transform.type_name = &get_transform_types()[match_id(transform.type_id)].type_name;
 
     query_result = conn.prep_exec("SELECT transform_line.id, val, 0, 0.0, location.lat, location.lon, resource_location.loc_radius, qty_id, resource.name FROM transform_line \
     JOIN resource_location ON transform_line.res_loc_id = resource_location.id \
@@ -159,7 +159,7 @@ pub fn transform(id: u64, config: State<Config>, conn: State<my::Pool>) -> Templ
     transform.lines = vec.unwrap();
     for line in transform.lines.iter_mut() {
         line.location.unit = if line.location.unit_id == 0 { "" }
-        else { &config.quantities[match_id(line.location.unit_id)].unit }
+        else { &get_quantities()[match_id(line.location.unit_id)].unit }
     }
 
     query_result = conn.prep_exec("SELECT resource_location.id, loc_val, loc_radius, location.lat, location.lon, qty_id, resource.name FROM resource_location \
@@ -174,11 +174,11 @@ pub fn transform(id: u64, config: State<Config>, conn: State<my::Pool>) -> Templ
     let mut locations = vec.unwrap();
     for location in locations.iter_mut() {
         location.unit = if location.unit_id == 0 { "" }
-        else { &config.quantities[match_id(location.unit_id)].unit }
+        else { &get_quantities()[match_id(location.unit_id)].unit }
     }
 
     Template::render("transform", TransformContext {
-        types: &config.transform_types,
+        types: &get_transform_types(),
         transform: Some(transform),
         locations,
     })

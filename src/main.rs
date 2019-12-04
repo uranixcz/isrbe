@@ -40,6 +40,19 @@ mod resources;
 mod transforms;
 mod parameters;
 
+static mut QUANTITIES: Vec<Quantity> = Vec::new();
+static mut RESOURCE_TYPES: Vec<ResourceType> = Vec::new();
+static mut TRANSFORM_TYPES: Vec<TransformType> = Vec::new();
+fn get_res_types() -> &'static Vec<ResourceType> {
+    unsafe { &RESOURCE_TYPES }
+}
+fn get_quantities() -> &'static Vec<Quantity> {
+    unsafe { &QUANTITIES }
+}
+fn get_transform_types() -> &'static Vec<TransformType> {
+    unsafe { &TRANSFORM_TYPES }
+}
+
 const ERROR_PAGE: &str = "error";
 
 enum Language {
@@ -118,12 +131,6 @@ impl FromRow for Quantity {
     }
 }
 
-pub struct Config {
-    resource_types: Vec<ResourceType>,
-    transform_types: Vec<TransformType>,
-    quantities: Vec<Quantity>,
-}
-
 #[get("/")]
 fn index(flash: Option<FlashMessage>, conn: State<my::Pool>) -> Template {
     #[derive(Serialize)]
@@ -164,17 +171,12 @@ fn rocket() -> Rocket {
         .attach(AdHoc::on_attach("db_url", |rocket| {
             let db_url = rocket.config().get_str("db_url").expect("Please set db_url = \"mysql://...\" in Rocket.toml");
             let pool = my::Pool::new(db_url).unwrap();
-            let resource_types: Vec<ResourceType> = catch_mysql_err(pool.prep_exec("SELECT res_type_id, res_type_name FROM resource_type", ())).unwrap();
-            let quantities: Vec<Quantity> =  catch_mysql_err(pool.prep_exec("SELECT id, name, unit FROM quantity", ())).unwrap();
-            let transform_types: Vec<TransformType> = catch_mysql_err(pool.prep_exec("SELECT id, name FROM transform_type", ())).unwrap();
-            Ok(rocket.manage(Config {
-                resource_types,
-                transform_types,
-                quantities,
-
-            })
-                .manage(pool)
-            )
+            unsafe {
+                QUANTITIES = catch_mysql_err(pool.prep_exec("SELECT id, name, unit FROM quantity", ())).unwrap();
+                RESOURCE_TYPES = catch_mysql_err(pool.prep_exec("SELECT res_type_id, res_type_name FROM resource_type", ())).unwrap();
+                TRANSFORM_TYPES = catch_mysql_err(pool.prep_exec("SELECT id, name FROM transform_type", ())).unwrap();
+            }
+            Ok(rocket.manage(pool))
         }))
         .mount("/", routes![index, resources, resource, addresource_page, addresource, modifyresource,
         addreslocation, reslocation, modifyreslocation, reslocations,

@@ -4,8 +4,8 @@ use rocket::response::{Flash, Redirect};
 use mysql as my;
 use my::prelude::FromRow;
 use std::fs;
-use crate::{catch_mysql_err, match_id, ERROR_PAGE, Config, ResourceType, Quantity};
-use crate::locations::{ResLocation, Coordinates};
+use crate::{catch_mysql_err, match_id, ERROR_PAGE, ResourceType, get_res_types};
+use crate::locations::Coordinates;
 use crate::parameters::Parameter;
 
 #[derive(Serialize)]
@@ -87,8 +87,8 @@ pub fn resources(conn: State<my::Pool>) -> Template {
 }
 
 #[get("/addresource")]
-pub fn addresource_page(config: State<Config>) -> Template {
-    Template::render("resource", ResourceContext { types: &config.resource_types, parameters: Vec::new(), resource: None, coordinates: Vec::new(), parameter_list: vec![] })
+pub fn addresource_page() -> Template {
+    Template::render("resource", ResourceContext { types: get_res_types(), parameters: Vec::new(), resource: None, coordinates: Vec::new(), parameter_list: vec![] })
 }
 
 #[get("/addresource?<name>&<type_id>")]
@@ -101,14 +101,14 @@ pub fn addresource(name: String, type_id: u64, conn: State<my::Pool>) -> Flash<R
 }
 
 #[get("/resource/<id>")]
-pub fn resource(id: u64, config: State<Config>, conn: State<my::Pool>) -> Template {
+pub fn resource(id: u64, conn: State<my::Pool>) -> Template {
     let mut query_result = conn.prep_exec("SELECT id, name, type_id FROM resource WHERE id = ?", (id,));
     let vec: Result<Vec<Resource>, String> = catch_mysql_err(query_result);
     if vec.is_err() {
         return Template::render(ERROR_PAGE, vec.unwrap_err().to_string())
     }
     let mut resource = vec.unwrap().remove(0);
-    resource.type_name = &config.resource_types[match_id(resource.type_id)].type_name;
+    resource.type_name = &get_res_types()[match_id(resource.type_id)].type_name;
 
     // get list of assigned parameters for location form
     query_result= conn.prep_exec(fs::read_to_string("sql/addreslocation.sql").expect("file error"), (id,));
@@ -133,7 +133,7 @@ pub fn resource(id: u64, config: State<Config>, conn: State<my::Pool>) -> Templa
     }
 
     Template::render("resource", ResourceContext {
-        types: &config.resource_types,
+        types: &get_res_types(),
         parameters: params.unwrap(),
         resource: Some(resource),
         coordinates: coords.unwrap(),
