@@ -6,6 +6,7 @@ use my::prelude::FromRow;
 use std::fs;
 use crate::{catch_mysql_err, match_id, ERROR_PAGE, TransformType, get_transform_types, get_quantities};
 use crate::locations::ResLocation;
+use crate::locations::transport::*;
 
 #[derive(Serialize)]
 struct TransformContext<'a> {
@@ -195,31 +196,9 @@ pub fn modifytransform(id: u64, refer: String, type_id: u64, conn: State<my::Poo
 
 #[get("/addline?<transform_id>&<amount>&<location>")]
 pub fn addline(transform_id: u64, amount: f64, location: u64, conn: State<my::Pool>) -> Flash<Redirect> {
-    if amount == 0.0 {
-        return Flash::error(Redirect::to("/"), "Line cannot have 0 amount.")
-    }
-    // get original resource amount at location
-    let orig_value: f64 = match conn.first_exec("SELECT loc_val FROM resource_location WHERE id = ?", (location,)) {
-        Ok(Some(row)) => row.get(0).unwrap(),
-        Ok(None) => return Flash::error(Redirect::to("/"), "No such resource location."),
-        Err(e) => return Flash::error(Redirect::to("/"), e.to_string()),
-    };
-    // test for negative amount of resource at location
-    let new_val = orig_value + amount;
-    if new_val < 0.0 {
-        return Flash::error(Redirect::to("/"), "Amount at location must not be negative.")
-    }
-    // update amount at location
-    let mut query_result = conn.prep_exec("UPDATE resource_location SET loc_val = loc_val + ? WHERE id = ?", (amount, location));
-    if query_result.is_err() {
-        return Flash::error(Redirect::to("/"), query_result.unwrap_err().to_string());
-    }
-
-    query_result = conn.prep_exec("INSERT INTO transform_line (transform_hdr_id, res_loc_id, val) VALUES (?, ?, ?)",
-                                      (transform_id, location, amount));
-    match query_result {
-        Ok(_) => Flash::success(Redirect::to("/"), "Transform line added."),
-        Err(e) => Flash::error(Redirect::to("/"), e.to_string())
+    match insert_new_event(transform_id, amount, location, &conn) {
+        Ok(m) => Flash::success(Redirect::to("/"), m),
+        Err(e) => Flash::error(Redirect::to("/"), e),
     }
 }
 
@@ -279,5 +258,29 @@ pub fn deleteline(id: u64, conn: State<my::Pool>) -> Flash<Redirect> {
     match query_result {
         Ok(_) => Flash::success(Redirect::to("/"), "Transform line removed."),
         Err(e) => Flash::error(Redirect::to("/"), e.to_string())
+    }
+}
+
+pub fn insert_new_event(transform_id: u64, amount: f64, location: u64, conn: &my::Pool) -> Result<String, String> {
+    if amount == 0.0 {
+        return Err("Event cannot have 0 amount.".to_string())
+    }
+    // get original resource amount at location
+    let orig_value: f64 = get_res_amount_at_location(location, &conn)?;
+    // test for negative amount of resource at location
+    if orig_value + amount < 0.0 {
+        return Err("Amount at location must not be negative.".to_string())
+    }
+    // update amount at location
+    update_res_amount_at_location(amount, location, &conn)?;
+    // insert new transform event
+    insert_new_event_db(transform_id, location, amount, &conn)
+}
+
+fn insert_new_event_db(transform_id: u64, location: u64, amount: f64, conn: &my::Pool) -> Result<String, String> {
+    match conn.prep_exec("INSERT INTO transform_line (transform_hdr_id, res_loc_id, val) VALUES (?, ?, ?)",
+                         (transform_id, location, amount)) {
+        Ok(_) => Ok("Transform event added.".to_string()),
+        Err(e) => Err(e.to_string()),
     }
 }
