@@ -7,6 +7,7 @@ use std::fs;
 use crate::{catch_mysql_err, match_id, ERROR_PAGE, TransformType, get_transform_types, get_quantities};
 use crate::locations::ResLocation;
 use crate::locations::transport::*;
+use std::borrow::Cow;
 
 #[derive(Serialize)]
 struct TransformContext<'a> {
@@ -261,15 +262,15 @@ pub fn deleteline(id: u64, conn: State<my::Pool>) -> Flash<Redirect> {
     }
 }
 
-pub fn insert_new_event(transform_id: u64, amount: f64, location: u64, conn: &my::Pool) -> Result<String, String> {
+pub fn insert_new_event(transform_id: u64, amount: f64, location: u64, conn: &my::Pool) -> Result<&str, Cow<'static, str>> {
     if amount == 0.0 {
-        return Err("Event cannot have 0 amount.".to_string())
+        return Err(Cow::Borrowed("Event cannot have 0 amount."))
     }
     // get original resource amount at location
     let orig_value: f64 = get_res_amount_at_location(location, &conn)?;
     // test for negative amount of resource at location
     if orig_value + amount < 0.0 {
-        return Err("Amount at location must not be negative.".to_string())
+        return Err(Cow::Borrowed("Amount at location must not be negative."))
     }
     // update amount at location
     update_res_amount_at_location(amount, location, &conn)?;
@@ -277,10 +278,10 @@ pub fn insert_new_event(transform_id: u64, amount: f64, location: u64, conn: &my
     insert_new_event_db(transform_id, location, amount, &conn)
 }
 
-fn insert_new_event_db(transform_id: u64, location: u64, amount: f64, conn: &my::Pool) -> Result<String, String> {
+fn insert_new_event_db(transform_id: u64, location: u64, amount: f64, conn: &my::Pool) -> Result<&str, Cow<'static, str>> {
     match conn.prep_exec("INSERT INTO transform_line (transform_hdr_id, res_loc_id, val) VALUES (?, ?, ?)",
                          (transform_id, location, amount)) {
-        Ok(_) => Ok("Transform event added.".to_string()),
-        Err(e) => Err(e.to_string()),
+        Ok(_) => Ok("Transform event added."),
+        Err(e) => Err(Cow::Owned(e.to_string())),
     }
 }
