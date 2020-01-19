@@ -262,6 +262,18 @@ pub fn deleteline(id: u64, conn: State<my::Pool>) -> Flash<Redirect> {
     }
 }
 
+#[get("/placeorder?<res_id>&<amount>&<location>")]
+pub fn place_order(res_id: u64, amount:f64, location: u64, conn: State<my::Pool>) -> Flash<Redirect> {
+    if res_is_available(res_id, amount, &conn) {
+        res_move(res_id, amount,location, &conn);
+        return Flash::success(Redirect::to("/"), "Resource delivered.");
+    }
+    match res_manufacture(res_id, amount, location, &conn) {
+        Ok(_) => Flash::success(Redirect::to("/"), "Resource manufactured and delivered."),
+        Err(e) => Flash::error(Redirect::to("/"), e),
+    }
+}
+
 pub fn insert_new_event(transform_id: u64, amount: f64, location: u64, conn: &my::Pool) -> Result<&str, Cow<'static, str>> {
     if amount == 0.0 {
         return Err(Cow::Borrowed("Event cannot have 0 amount."))
@@ -284,4 +296,32 @@ fn insert_new_event_db(transform_id: u64, location: u64, amount: f64, conn: &my:
         Ok(_) => Ok("Transform event added."),
         Err(e) => Err(Cow::Owned(e.to_string())),
     }
+}
+
+fn res_is_available(res_id: u64, amount: f64, conn: &my::Pool) -> bool {
+    unimplemented!()
+}
+
+fn res_move(res_id: u64, amount: f64, destination: u64, conn: &my::Pool) {
+    unimplemented!()
+}
+
+fn res_manufacture(res_id: u64, amount:f64, destination: u64, conn: &my::Pool) -> Result<&str, &str> {
+    let deps = res_get_dependencies(res_id, conn);
+    if deps.len() == 0 { return Err("Not enough resources.") }
+    for dep in deps.iter() {
+        if res_is_available(dep.0, dep.1, conn) {
+            res_move(dep.0, dep.1, destination, conn);
+        }
+        else {
+            if let Err(e) = res_manufacture(dep.0, dep.1, destination, conn) {
+                return Err(e)
+            }
+        }
+    }
+    Ok("Resource manufactured.")
+}
+
+fn res_get_dependencies(res_id: u64, conn: &my::Pool) -> Vec<(u64, f64)> {
+    unimplemented!()
 }
