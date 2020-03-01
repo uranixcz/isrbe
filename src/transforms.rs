@@ -307,6 +307,12 @@ fn res_move(res_id: u64, amount: f64, destination: u64, conn: &my::Pool) {
 }
 
 fn res_manufacture(res_id: u64, amount:f64, destination: u64, conn: &my::Pool) -> Result<&str, &str> {
+    struct ResAmount(u64, f64);
+
+    fn res_get_dependencies(res_id: u64, conn: &my::Pool) -> Vec<ResAmount> {
+        unimplemented!()
+    }
+
     let deps = res_get_dependencies(res_id, conn);
     if deps.len() == 0 { return Err("Not enough resources.") }
     for dep in deps.iter() {
@@ -322,6 +328,3 @@ fn res_manufacture(res_id: u64, amount:f64, destination: u64, conn: &my::Pool) -
     Ok("Resource manufactured.")
 }
 
-fn res_get_dependencies(res_id: u64, conn: &my::Pool) -> Vec<(u64, f64)> {
-    unimplemented!()
-}
