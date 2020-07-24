@@ -4,8 +4,9 @@ use rocket::response::{Flash, Redirect};
 use mysql as my;
 use my::prelude::FromRow;
 use std::fs;
-use crate::{catch_mysql_err, match_id, ERROR_PAGE, get_quantities};
-use crate::parameters::Parameter;
+use isrbe::{catch_mysql_err, match_id, ERROR_PAGE, get_quantities};
+use isrbe::parameters::Parameter;
+use isrbe::locations::Coordinates;
 
 pub mod transport;
 
@@ -46,30 +47,6 @@ impl<'a> FromRow for ResLocation<'a> {
                 unit_id,
                 unit: "",
                 res_name,
-            })
-        }
-    }
-}
-#[derive(Serialize, Debug)]
-pub struct Coordinates {
-    id: u64,
-    lat: f64,
-    lon: f64,
-}
-impl FromRow for Coordinates {
-    fn from_row(_row: my::Row) -> Self {
-        unimplemented!()
-    }
-    fn from_row_opt(row: my::Row) -> Result<Self, my::FromRowError> {
-        let deconstruct = my::from_row_opt(row);
-        if deconstruct.is_err() {
-            Err(deconstruct.unwrap_err())
-        } else {
-            let (id, lat, lon) = deconstruct.unwrap();
-            Ok(Coordinates {
-                id,
-                lat,
-                lon,
             })
         }
     }

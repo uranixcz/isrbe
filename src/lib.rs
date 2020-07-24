@@ -1,3 +1,20 @@
+/*
+* Copyright 2019-2020 Michal Mauser
+*
+* This program is free software: you can redistribute it and/or modify
+* it under the terms of the GNU Affero General Public License as published by
+* the Free Software Foundation, either version 3 of the License, or
+* (at your option) any later version.
+*
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU Affero General Public License for more details.
+*
+* You should have received a copy of the GNU Affero General Public License
+* along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 #![feature(proc_macro_hygiene, decl_macro)]
 
 #[macro_use] extern crate rocket;
@@ -6,20 +23,26 @@ extern crate rocket_contrib;
 #[macro_use] extern crate serde_derive;
 extern crate mysql;
 
+pub mod resources;
+pub mod parameters;
+pub mod locations;
+
 use serde::Serialize;
 use std::fmt::Debug;
 use mysql::prelude::FromRow;
 use mysql as my;
 
-pub mod locations;
-pub mod resources;
-pub mod transforms;
-pub mod parameters;
-
 pub const ERROR_PAGE: &str = "error";
 pub static mut QUANTITIES: Vec<Quantity> = Vec::new();
 pub static mut RESOURCE_TYPES: Vec<ResourceType> = Vec::new();
 pub static mut TRANSFORM_TYPES: Vec<TransformType> = Vec::new();
+pub fn init(pool: &my::Pool) {
+    unsafe {
+        QUANTITIES = catch_mysql_err(pool.prep_exec("SELECT id, name, unit FROM quantity", ())).unwrap();
+        RESOURCE_TYPES = catch_mysql_err(pool.prep_exec("SELECT res_type_id, res_type_name FROM resource_type", ())).unwrap();
+        TRANSFORM_TYPES = catch_mysql_err(pool.prep_exec("SELECT id, name FROM transform_type", ())).unwrap();
+    }
+}
 pub fn get_res_types() -> &'static Vec<ResourceType> {
     unsafe { &RESOURCE_TYPES }
 }
@@ -33,7 +56,7 @@ pub fn get_transform_types() -> &'static Vec<TransformType> {
 #[derive(Serialize, Debug)]
 pub struct ResourceType {
     id: u64,
-    type_name: String,
+    pub type_name: String,
 }
 impl FromRow for ResourceType {
     fn from_row(_row: my::Row) -> Self {
@@ -56,7 +79,7 @@ impl FromRow for ResourceType {
 #[derive(Serialize, Debug)]
 pub struct TransformType {
     id: u64,
-    type_name: String,
+    pub type_name: String,
 }
 impl FromRow for TransformType {
     fn from_row(_row: my::Row) -> Self {
@@ -80,7 +103,7 @@ impl FromRow for TransformType {
 pub struct Quantity {
     id: u64,
     name: String,
-    unit: String,
+    pub unit: String,
 }
 impl FromRow for Quantity {
     fn from_row(_row: my::Row) -> Self {

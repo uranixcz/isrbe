@@ -1,5 +1,5 @@
 /*
-* Copyright 2019 Michal Mauser
+* Copyright 2019-2020 Michal Mauser
 *
 * This program is free software: you can redistribute it and/or modify
 * it under the terms of the GNU Affero General Public License as published by
@@ -22,16 +22,20 @@ extern crate rocket_contrib;
 #[macro_use] extern crate serde_derive;
 extern crate mysql;
 
+mod resources;
+use resources::*;
+mod locations;
+use locations::*;
+mod parameters;
+use parameters::*;
+mod transforms;
+use transforms::*;
+
 use rocket::{Rocket, State};
 use rocket::fairing::AdHoc;
 use rocket_contrib::templates::Template;
 use rocket::request::FlashMessage;
 use mysql as my;
-use isrbe::locations::*;
-use isrbe::resources::*;
-use isrbe::transforms::*;
-use isrbe::parameters::*;
-use isrbe::{catch_mysql_err, QUANTITIES, RESOURCE_TYPES, TRANSFORM_TYPES};
 
 const ERROR_PAGE: &str = "error";
 
@@ -80,11 +84,7 @@ fn rocket() -> Rocket {
         .attach(AdHoc::on_attach("db_url", |rocket| {
             let db_url = rocket.config().get_str("db_url").expect("Please set db_url = \"mysql://...\" in Rocket.toml");
             let pool = my::Pool::new(db_url).unwrap();
-            unsafe {
-                QUANTITIES = catch_mysql_err(pool.prep_exec("SELECT id, name, unit FROM quantity", ())).unwrap();
-                RESOURCE_TYPES = catch_mysql_err(pool.prep_exec("SELECT res_type_id, res_type_name FROM resource_type", ())).unwrap();
-                TRANSFORM_TYPES = catch_mysql_err(pool.prep_exec("SELECT id, name FROM transform_type", ())).unwrap();
-            }
+            isrbe::init(&pool);
             Ok(rocket.manage(pool))
         }))
         .mount("/", routes![index, resources, resource, addresource_page, addresource, modifyresource,

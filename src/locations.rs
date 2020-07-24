@@ -5,12 +5,12 @@ use std::fs;
 use crate::{catch_mysql_err, match_id, ERROR_PAGE, ResourceType, get_res_types};
 
 #[derive(Serialize, Debug)]
-pub struct Parameter {
+pub struct Coordinates {
     id: u64,
-    name: String,
-    unit: String,
+    lat: f64,
+    lon: f64,
 }
-impl FromRow for Parameter {
+impl FromRow for Coordinates {
     fn from_row(_row: my::Row) -> Self {
         unimplemented!()
     }
@@ -19,17 +19,17 @@ impl FromRow for Parameter {
         if deconstruct.is_err() {
             Err(deconstruct.unwrap_err())
         } else {
-            let (id, name, unit) = deconstruct.unwrap();
-            Ok(Parameter {
+            let (id, lat, lon) = deconstruct.unwrap();
+            Ok(Coordinates {
                 id,
-                name,
-                unit
+                lat,
+                lon,
             })
         }
     }
 }
 
-pub fn get_parameters(conn: &Pool) -> Result<Vec<(u64, String, String)>, String> {
-    let query_result = conn.prep_exec("SELECT param.id, param.name, param_type.name FROM param JOIN param_type ON param.type = param_type.id", ());
+pub fn get_locations(conn: &Pool) -> Result<Vec<Coordinates>, String> {
+    let  mut query_result = conn.prep_exec("SELECT id, lat, lon FROM location", ());
     catch_mysql_err(query_result)
 }
