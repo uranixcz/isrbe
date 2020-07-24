@@ -4,6 +4,8 @@ use my::{QueryResult, Pool};
 use std::fs;
 use crate::{catch_mysql_err, match_id, ERROR_PAGE, ResourceType, get_res_types};
 
+pub mod transport;
+
 #[derive(Serialize, Debug)]
 pub struct Coordinates {
     id: u64,

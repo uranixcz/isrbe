@@ -7,8 +7,7 @@ use std::fs;
 use isrbe::{catch_mysql_err, match_id, ERROR_PAGE, get_quantities};
 use isrbe::parameters::Parameter;
 use isrbe::locations::Coordinates;
-
-pub mod transport;
+use isrbe::locations::transport::*;
 
 #[derive(Serialize)]
 struct LocationContext<'a> {

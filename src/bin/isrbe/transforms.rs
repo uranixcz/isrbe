@@ -6,7 +6,7 @@ use my::prelude::FromRow;
 use std::fs;
 use isrbe::{catch_mysql_err, match_id, ERROR_PAGE, TransformType, get_transform_types, get_quantities};
 use crate::locations::ResLocation;
-use crate::locations::transport::*;
+use isrbe::locations::transport::{get_res_amount_at_location, update_res_amount_at_location};
 use std::borrow::Cow;
 
 #[derive(Serialize)]
