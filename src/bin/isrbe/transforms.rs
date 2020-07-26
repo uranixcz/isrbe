@@ -5,7 +5,7 @@ use mysql as my;
 use my::prelude::FromRow;
 use std::fs;
 use isrbe::{catch_mysql_err, match_id, ERROR_PAGE, TransformType, get_transform_types, get_quantities};
-use crate::locations::ResLocation;
+use isrbe::locations::ResLocationResolved;
 use isrbe::locations::transport::{get_res_amount_at_location, update_res_amount_at_location};
 use std::borrow::Cow;
 
@@ -13,7 +13,7 @@ use std::borrow::Cow;
 struct TransformContext<'a> {
     types: &'a Vec<TransformType>,
     transform: Option<Transform<'a>>,
-    locations: Vec<ResLocation<'a>>,
+    locations: Vec<ResLocationResolved<'a>>,
 }
 
 #[derive(Serialize, Debug)]
@@ -48,7 +48,7 @@ impl<'a> FromRow for Transform<'a> {
 struct TransformLine<'a> {
     id: u64,
     amount: f64,
-    location: ResLocation<'a>,
+    location: ResLocationResolved<'a>,
 }
 impl<'a> FromRow for TransformLine<'a> {
     fn from_row(_row: my::Row) -> Self {
@@ -63,7 +63,7 @@ impl<'a> FromRow for TransformLine<'a> {
             Ok(TransformLine {
                 id,
                 amount,
-                location: ResLocation {
+                location: ResLocationResolved {
                     id: loc_id,
                     amount: loc_amount,
                     radius,
@@ -82,7 +82,7 @@ impl<'a> FromRow for TransformLine<'a> {
 struct TransformLineContext<'a> {
     //types: &'a Vec<TransformType>,
     line: Option<TransformLine<'a>>,
-    locations: Vec<ResLocation<'a>>,
+    locations: Vec<ResLocationResolved<'a>>,
 }
 
 #[get("/transforms")]
@@ -169,7 +169,7 @@ pub fn transform(id: u64, conn: State<my::Pool>) -> Template {
     JOIN resource ON resource_param.res_id = resource.id \
     JOIN param ON resource_param.param_id = param.id \
     JOIN location ON location.id = loc_id", ());
-    let vec: Result<Vec<ResLocation>, String> = catch_mysql_err(query_result);
+    let vec: Result<Vec<ResLocationResolved>, String> = catch_mysql_err(query_result);
     if vec.is_err() {
         return Template::render(ERROR_PAGE, vec.unwrap_err().to_string())
     }

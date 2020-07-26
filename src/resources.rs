@@ -7,14 +7,14 @@ use crate::locations::Coordinates;
 use crate::parameters::Parameter;
 
 #[derive(Serialize, Debug)]
-pub struct Resource <'a>{
+pub struct ResourceBasic<'a>{
     id: u64,
     name: String,
     pub type_id: u64,
     pub type_name: &'a str,
     //locations: Vec<ResLocation<'a>>,
 }
-impl<'a> FromRow for Resource<'a> {
+impl<'a> FromRow for ResourceBasic<'a> {
     fn from_row(_row: my::Row) -> Self {
         unimplemented!()
     }
@@ -24,7 +24,7 @@ impl<'a> FromRow for Resource<'a> {
             Err(deconstruct.unwrap_err())
         } else {
             let (id, name, type_id) = deconstruct.unwrap();
-            Ok(Resource {
+            Ok(ResourceBasic {
                 id,
                 name,
                 type_id,
@@ -69,7 +69,7 @@ pub fn get_resources(conn: &Pool) -> Result<Vec<ResourceResolvedType>, String> {
     catch_mysql_err(query_result)
 }
 
-pub fn get_resource(id: u64, conn: &Pool) -> Result<Resource, String> {
+pub fn get_resource(id: u64, conn: &Pool) -> Result<ResourceBasic, String> {
     let query_result = conn.prep_exec("SELECT id, name, type_id FROM resource WHERE id = ?", (id,));
     Ok(catch_mysql_err(query_result)?.remove(0))
 }

@@ -31,7 +31,96 @@ impl FromRow for Coordinates {
     }
 }
 
+#[derive(Serialize, Debug)]
+pub struct ResLocationResolved<'a> {
+    pub id: u64,
+    pub amount: f64,
+    pub radius: u64,
+    pub lat: f64,
+    pub lon: f64,
+    pub unit_id: u64,
+    pub unit: &'a str,
+    pub res_name: String,
+}
+impl<'a> FromRow for ResLocationResolved<'a> {
+    fn from_row(_row: my::Row) -> Self {
+        unimplemented!()
+    }
+    fn from_row_opt(row: my::Row) -> Result<Self, my::FromRowError> {
+        let deconstruct = my::from_row_opt(row);
+        if deconstruct.is_err() {
+            Err(deconstruct.unwrap_err())
+        } else {
+            let (id, amount, radius, lat, lon, unit_id, res_name) = deconstruct.unwrap();
+            Ok(ResLocationResolved {
+                id,
+                amount,
+                radius,
+                lat,
+                lon,
+                unit_id,
+                unit: "",
+                res_name,
+            })
+        }
+    }
+}
+
+#[derive(Serialize, Debug)]
+pub struct ResLocationBasic {
+    id: u64,
+    amount: f64,
+    lat: f64,
+    lon: f64,
+    radius: u64,
+    unit: String
+}
+impl FromRow for ResLocationBasic {
+    fn from_row(_row: my::Row) -> Self {
+        unimplemented!()
+    }
+    fn from_row_opt(row: my::Row) -> Result<Self, my::FromRowError> {
+        let deconstruct = my::from_row_opt(row);
+        if deconstruct.is_err() {
+            Err(deconstruct.unwrap_err())
+        } else {
+            let (id, amount, radius, lat, lon, unit) = deconstruct.unwrap();
+            Ok(ResLocationBasic {
+                id,
+                amount,
+                lat,
+                lon,
+                radius,
+                unit,
+            })
+        }
+    }
+}
+
 pub fn get_locations(conn: &Pool) -> Result<Vec<Coordinates>, String> {
-    let  mut query_result = conn.prep_exec("SELECT id, lat, lon FROM location", ());
+    let  query_result = conn.prep_exec("SELECT id, lat, lon FROM location", ());
+    catch_mysql_err(query_result)
+}
+
+pub fn add_resource_location(amount: f64, res_param: u64, radius: u64, location: u64, conn: &Pool) -> my::Result<QueryResult> {
+    conn.prep_exec("INSERT INTO resource_location (res_param_id, loc_id, loc_radius, loc_val) VALUES (?, ?, ?, ?)",
+                                      (res_param, location, radius, amount))
+}
+
+pub fn get_resource_at_location_info(id: u64, conn: &Pool) -> Result<ResLocationResolved, String> {
+    let query_result = conn.prep_exec(fs::read_to_string("sql/reslocation.sql").expect("file error"), (id,));
+    Ok(catch_mysql_err(query_result)?.remove(0))
+}
+
+pub fn modify_resource_at_location(id: u64, amount: f64, conn: &Pool) -> my::Result<QueryResult> {
+    conn.prep_exec("UPDATE resource_location SET loc_val = ? WHERE id = ?", (amount, id))
+}
+
+pub fn add_location(lat: f64, lon: f64, conn: &Pool) -> my::Result<QueryResult> {
+    conn.prep_exec("INSERT INTO location (lat, lon) VALUES (?, ?)", (lat, lon))
+}
+
+pub fn get_resource_locations(id: u64, conn: &Pool) -> Result<Vec<ResLocationBasic>, String> {
+    let query_result = conn.prep_exec(fs::read_to_string("sql/reslocations.sql").expect("file error"), (id,));
     catch_mysql_err(query_result)
 }

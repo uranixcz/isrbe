@@ -13,7 +13,7 @@ use isrbe::locations::get_locations;
 struct ResourceContext<'a> {
     types: &'a Vec<ResourceType>,
     parameters: Vec<Parameter>,
-    resource: Option<Resource<'a>>,
+    resource: Option<ResourceBasic<'a>>,
     coordinates: Vec<Coordinates>,
     parameter_list: Vec<(u64, String, String)>,
 }
