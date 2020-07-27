@@ -6,7 +6,7 @@ use my::prelude::FromRow;
 use std::fs;
 use isrbe::{catch_mysql_err, match_id, ERROR_PAGE, get_quantities};
 use isrbe::parameters::Parameter;
-use isrbe::locations::{Coordinates, add_resource_location, get_resource_at_location_info, ResLocationResolved, get_locations, modify_resource_at_location, add_location, get_resource_locations};
+use isrbe::locations::{Coordinates, add_resource_location, get_resource_location_info, ResLocationResolved, get_locations, add_location, get_locations_of_resource};
 use isrbe::locations::transport::*;
 use mysql::Pool;
 
@@ -27,7 +27,7 @@ pub fn addreslocation(amount: f64, res_param: u64, radius: u64, location: u64, c
 
 #[get("/reslocation/<id>")]
 pub fn reslocation(id: u64, conn: State<my::Pool>) -> Template {
-    let mut location = match get_resource_at_location_info(id, &conn) {
+    let mut location = match get_resource_location_info(id, &conn) {
         Err(e) => return Template::render(ERROR_PAGE, e),
         Ok(l) => l,
     };
@@ -100,7 +100,7 @@ pub fn locations(conn: State<my::Pool>) -> Template {
 
 #[get("/resource/<id>/locations")]
 pub fn reslocations(id: u64, conn: State<my::Pool>) -> Template {
-    match get_resource_locations(id, &conn) {
+    match get_locations_of_resource(id, &conn) {
         Ok(v) => Template::render("reslocations", v),
         Err(e) => Template::render(ERROR_PAGE, e)
     }

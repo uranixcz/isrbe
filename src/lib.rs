@@ -26,6 +26,7 @@ extern crate mysql;
 pub mod resources;
 pub mod parameters;
 pub mod locations;
+pub mod transforms;
 
 use serde::Serialize;
 use std::fmt::Debug;

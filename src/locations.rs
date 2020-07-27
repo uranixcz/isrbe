@@ -2,7 +2,7 @@ use mysql as my;
 use my::prelude::FromRow;
 use my::{QueryResult, Pool};
 use std::fs;
-use crate::{catch_mysql_err, match_id, ERROR_PAGE, ResourceType, get_res_types};
+use crate::{catch_mysql_err, match_id, ERROR_PAGE, ResourceType, get_res_types, get_quantities};
 
 pub mod transport;
 
@@ -107,20 +107,30 @@ pub fn add_resource_location(amount: f64, res_param: u64, radius: u64, location:
                                       (res_param, location, radius, amount))
 }
 
-pub fn get_resource_at_location_info(id: u64, conn: &Pool) -> Result<ResLocationResolved, String> {
+pub fn get_resource_location_info(id: u64, conn: &Pool) -> Result<ResLocationResolved, String> {
     let query_result = conn.prep_exec(fs::read_to_string("sql/reslocation.sql").expect("file error"), (id,));
     Ok(catch_mysql_err(query_result)?.remove(0))
-}
-
-pub fn modify_resource_at_location(id: u64, amount: f64, conn: &Pool) -> my::Result<QueryResult> {
-    conn.prep_exec("UPDATE resource_location SET loc_val = ? WHERE id = ?", (amount, id))
 }
 
 pub fn add_location(lat: f64, lon: f64, conn: &Pool) -> my::Result<QueryResult> {
     conn.prep_exec("INSERT INTO location (lat, lon) VALUES (?, ?)", (lat, lon))
 }
 
-pub fn get_resource_locations(id: u64, conn: &Pool) -> Result<Vec<ResLocationBasic>, String> {
+pub fn get_locations_of_resource(id: u64, conn: &Pool) -> Result<Vec<ResLocationBasic>, String> {
     let query_result = conn.prep_exec(fs::read_to_string("sql/reslocations.sql").expect("file error"), (id,));
     catch_mysql_err(query_result)
+}
+
+pub fn get_resource_locations(conn: &Pool) -> Result<Vec<ResLocationResolved>, String> {
+    let query_result = conn.prep_exec("SELECT resource_location.id, loc_val, loc_radius, location.lat, location.lon, qty_id, resource.name FROM resource_location \
+    JOIN resource_param ON resource_location.res_param_id = resource_param.id \
+    JOIN resource ON resource_param.res_id = resource.id \
+    JOIN param ON resource_param.param_id = param.id \
+    JOIN location ON location.id = loc_id", ());
+    let mut locations: Vec<ResLocationResolved>  = catch_mysql_err(query_result)?;
+    for location in locations.iter_mut() {
+        location.unit = if location.unit_id == 0 { "" }
+        else { &get_quantities()[match_id(location.unit_id)].unit }
+    }
+    Ok(locations)
 }
