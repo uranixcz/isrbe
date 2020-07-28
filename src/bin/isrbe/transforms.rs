@@ -5,10 +5,9 @@ use mysql as my;
 use my::prelude::FromRow;
 use std::fs;
 use isrbe::{catch_mysql_err, match_id, ERROR_PAGE, TransformType, get_transform_types, get_quantities};
-use isrbe::locations::{ResLocationResolved, get_resource_locations};
-use isrbe::locations::transport::{get_res_amount_at_location, update_res_amount_at_location};
+use isrbe::locations::{ResLocationResolved, get_resource_locations, get_res_amount_at_location};
 use std::borrow::Cow;
-use isrbe::transforms::{TransformResolved, TransformLine, Transform, get_transforms, add_transform, get_transform, get_transform_lines, modify_transform, insert_new_event, res_is_available, res_move, res_manufacture, get_line, delete_line};
+use isrbe::transforms::{TransformResolved, TransformLine, Transform, get_transforms, add_transform, get_transform, get_transform_lines, modify_transform, add_line, res_is_available, res_move, res_manufacture, get_line, delete_line};
 
 #[derive(Serialize)]
 struct TransformContext<'a> {
@@ -74,9 +73,23 @@ pub fn modifytransform(id: u64, refer: String, type_id: u64, conn: State<my::Poo
 
 #[get("/addline?<transform_id>&<amount>&<location>")]
 pub fn addline(transform_id: u64, amount: f64, location: u64, conn: State<my::Pool>) -> Flash<Redirect> {
-    match insert_new_event(transform_id, amount, location, &conn) {
-        Ok(m) => Flash::success(Redirect::to("/"), m),
-        Err(e) => Flash::error(Redirect::to("/"), e),
+    if amount == 0.0 {
+        return Flash::error(Redirect::to("/"), Cow::Borrowed("Event cannot have 0 amount."));
+    }
+    // get original resource amount at location
+    let orig_value: f64 = match get_res_amount_at_location(location, &conn) {
+        Err(e) => return Flash::error(Redirect::to("/"), Cow::Owned(e.to_string())),
+        Ok(None) => return Flash::error(Redirect::to("/"), Cow::Borrowed("No such resource location.")),
+        Ok(Some(row)) => row.get(0).unwrap(),
+    };
+    // test for negative amount of resource at location
+    if orig_value + amount < 0.0 {
+        return Flash::error(Redirect::to("/"), Cow::Borrowed("Amount at location must not be negative."));
+    }
+
+    match add_line(transform_id, amount, location, &conn) {
+        Ok(_) => Flash::success(Redirect::to("/"), Cow::Borrowed("Transform event added.")),
+        Err(e) => Flash::error(Redirect::to("/"), Cow::Owned(e.to_string())),
     }
 }
 

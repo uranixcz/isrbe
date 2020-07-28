@@ -3,8 +3,7 @@ use my::prelude::FromRow;
 use my::{QueryResult, Pool};
 use std::fs;
 use crate::{catch_mysql_err, match_id, ERROR_PAGE, ResourceType, get_res_types, get_transform_types, get_quantities};
-use crate::locations::ResLocationResolved;
-use crate::locations::transport::{get_res_amount_at_location, update_res_amount_at_location};
+use crate::locations::{ResLocationResolved, get_res_amount_at_location};
 use std::borrow::Cow;
 
 #[derive(Serialize, Debug)]
@@ -143,33 +142,15 @@ pub fn get_line(id: u64, conn: &Pool) -> Result<Option<my::Row>, my::Error> {
 }
 
 pub fn delete_line(id: u64, location: u64, amount: f64, conn: &Pool) -> my::Result<QueryResult> {
-    // TODO should be in transaction with previous update
+    // TODO should be in transaction
     let _ = conn.prep_exec("DELETE FROM transform_line WHERE id = ?", (id,))?;
     conn.prep_exec("UPDATE resource_location SET loc_val = loc_val - ? WHERE id = ?", (amount, location))
 }
 
-pub fn insert_new_event(transform_id: u64, amount: f64, location: u64, conn: &Pool) -> Result<&str, Cow<'static, str>> {
-    if amount == 0.0 {
-        return Err(Cow::Borrowed("Event cannot have 0 amount."))
-    }
-    // get original resource amount at location
-    let orig_value: f64 = get_res_amount_at_location(location, &conn)?;
-    // test for negative amount of resource at location
-    if orig_value + amount < 0.0 {
-        return Err(Cow::Borrowed("Amount at location must not be negative."))
-    }
-    // update amount at location
-    update_res_amount_at_location(amount, location, &conn)?;
-    // insert new transform event
-    insert_new_event_db(transform_id, location, amount, &conn)
-}
-
-fn insert_new_event_db(transform_id: u64, location: u64, amount: f64, conn: &Pool) -> Result<&str, Cow<'static, str>> {
-    match conn.prep_exec("INSERT INTO transform_line (transform_hdr_id, res_loc_id, val) VALUES (?, ?, ?)",
-                         (transform_id, location, amount)) {
-        Ok(_) => Ok("Transform event added."),
-        Err(e) => Err(Cow::Owned(e.to_string())),
-    }
+pub fn add_line(transform_id: u64, amount: f64, location: u64, conn: &Pool) -> my::Result<QueryResult> {
+    // TODO should be in transaction
+    let _ = conn.prep_exec("UPDATE resource_location SET loc_val = loc_val + ? WHERE id = ?", (amount, location))?;
+    conn.prep_exec("INSERT INTO transform_line (transform_hdr_id, res_loc_id, val) VALUES (?, ?, ?)", (transform_id, location, amount))
 }
 
 pub fn res_is_available(res_id: u64, amount: f64, conn: &Pool) -> bool {

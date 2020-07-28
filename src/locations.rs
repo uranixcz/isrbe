@@ -3,6 +3,8 @@ use my::prelude::FromRow;
 use my::{QueryResult, Pool};
 use std::fs;
 use crate::{catch_mysql_err, match_id, ERROR_PAGE, ResourceType, get_res_types, get_quantities};
+use std::fs::OpenOptions;
+use mysql::Row;
 
 pub mod transport;
 
@@ -42,7 +44,7 @@ pub struct ResLocationResolved<'a> {
     pub unit: &'a str,
     pub res_name: String,
 }
-impl<'a> FromRow for ResLocationResolved<'a> {
+impl FromRow for ResLocationResolved<'_> {
     fn from_row(_row: my::Row) -> Self {
         unimplemented!()
     }
@@ -62,6 +64,16 @@ impl<'a> FromRow for ResLocationResolved<'a> {
                 unit: "",
                 res_name,
             })
+        }
+    }
+}
+impl ResLocationResolved<'_> {
+    fn set_unit_from_cache(&mut self) {
+        if self.unit_id == 0 {
+            self.unit = "";
+        }
+        else {
+            self.unit = &get_quantities()[match_id(self.unit_id)].unit;
         }
     }
 }
@@ -109,7 +121,13 @@ pub fn add_resource_location(amount: f64, res_param: u64, radius: u64, location:
 
 pub fn get_resource_location_info(id: u64, conn: &Pool) -> Result<ResLocationResolved, String> {
     let query_result = conn.prep_exec(fs::read_to_string("sql/reslocation.sql").expect("file error"), (id,));
-    Ok(catch_mysql_err(query_result)?.remove(0))
+    let mut location: ResLocationResolved = catch_mysql_err(query_result)?.remove(0);
+    location.set_unit_from_cache();
+    Ok(location)
+}
+
+pub fn get_res_amount_at_location(location: u64, conn: &my::Pool) -> my::Result<Option<Row>> {
+    conn.first_exec("SELECT loc_val FROM resource_location WHERE id = ?", (location,))
 }
 
 pub fn add_location(lat: f64, lon: f64, conn: &Pool) -> my::Result<QueryResult> {
@@ -129,8 +147,11 @@ pub fn get_resource_locations(conn: &Pool) -> Result<Vec<ResLocationResolved>, S
     JOIN location ON location.id = loc_id", ());
     let mut locations: Vec<ResLocationResolved>  = catch_mysql_err(query_result)?;
     for location in locations.iter_mut() {
-        location.unit = if location.unit_id == 0 { "" }
-        else { &get_quantities()[match_id(location.unit_id)].unit }
+        location.set_unit_from_cache();
     }
     Ok(locations)
+}
+
+pub fn set_resource_amount_at_location(id: u64, amount: f64, conn: &Pool) -> my::Result<QueryResult> {
+    conn.prep_exec("UPDATE resource_location SET loc_val = ? WHERE id = ?", (amount, id))
 }

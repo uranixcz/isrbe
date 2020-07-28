@@ -6,7 +6,7 @@ use my::prelude::FromRow;
 use std::fs;
 use isrbe::{catch_mysql_err, match_id, ERROR_PAGE, get_quantities};
 use isrbe::parameters::Parameter;
-use isrbe::locations::{Coordinates, add_resource_location, get_resource_location_info, ResLocationResolved, get_locations, add_location, get_locations_of_resource};
+use isrbe::locations::{Coordinates, add_resource_location, get_resource_location_info, ResLocationResolved, get_locations, add_location, get_locations_of_resource, set_resource_amount_at_location};
 use isrbe::locations::transport::*;
 use mysql::Pool;
 
@@ -27,12 +27,10 @@ pub fn addreslocation(amount: f64, res_param: u64, radius: u64, location: u64, c
 
 #[get("/reslocation/<id>")]
 pub fn reslocation(id: u64, conn: State<my::Pool>) -> Template {
-    let mut location = match get_resource_location_info(id, &conn) {
+    let location = match get_resource_location_info(id, &conn) {
         Err(e) => return Template::render(ERROR_PAGE, e),
         Ok(l) => l,
     };
-    location.unit = if location.unit_id == 0 { "" }
-    else { &get_quantities()[match_id(location.unit_id)].unit };
 
     /*query_result= conn.prep_exec(fs::read_to_string("sql/reslocation_list.sql").expect("file error"), (id,));
     let params: Result<Vec<Parameter>, String> = catch_mysql_err(query_result);
@@ -62,7 +60,7 @@ pub fn modifyreslocation(id: u64, amount: f64, res_param: u64, radius: u64, loca
 }*/
 #[get("/modifyreslocation?<id>&<amount>")]
 pub fn modifyreslocation(id: u64, amount: f64, conn: State<my::Pool>) -> Flash<Redirect> {
-    match modify_resource_at_location(id, amount, &conn) {
+    match set_resource_amount_at_location(id, amount, &conn) {
         Ok(_) => Flash::success(Redirect::to("/"), "Resource location modified."),
         Err(e) => Flash::error(Redirect::to("/"), e.to_string())
     }
