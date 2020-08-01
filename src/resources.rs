@@ -19,19 +19,14 @@ impl<'a> FromRow for ResourceBasic<'a> {
         unimplemented!()
     }
     fn from_row_opt(row: my::Row) -> Result<Self, my::FromRowError> {
-        let deconstruct = my::from_row_opt(row);
-        if deconstruct.is_err() {
-            Err(deconstruct.unwrap_err())
-        } else {
-            let (id, name, type_id) = deconstruct.unwrap();
-            Ok(ResourceBasic {
-                id,
-                name,
-                type_id,
-                type_name: "",
-                //locations: Vec::new(),
-            })
-        }
+        let (id, name, type_id) = my::from_row_opt(row)?;
+        Ok(ResourceBasic {
+            id,
+            name,
+            type_id,
+            type_name: "",
+            //locations: Vec::new(),
+        })
     }
 }
 
@@ -48,19 +43,14 @@ impl FromRow for ResourceResolvedType {
         unimplemented!()
     }
     fn from_row_opt(row: my::Row) -> Result<Self, my::FromRowError> {
-        let deconstruct = my::from_row_opt(row);
-        if deconstruct.is_err() {
-            Err(deconstruct.unwrap_err())
-        } else {
-            let (id, name, type_id, locations, parameters) = deconstruct.unwrap();
-            Ok(ResourceResolvedType {
-                id,
-                name,
-                type_id,
-                locations,
-                parameters
-            })
-        }
+        let (id, name, type_id, locations, parameters) = my::from_row_opt(row)?;
+        Ok(ResourceResolvedType {
+            id,
+            name,
+            type_id,
+            locations,
+            parameters
+        })
     }
 }
 

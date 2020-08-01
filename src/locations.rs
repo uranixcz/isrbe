@@ -19,17 +19,12 @@ impl FromRow for Coordinates {
         unimplemented!()
     }
     fn from_row_opt(row: my::Row) -> Result<Self, my::FromRowError> {
-        let deconstruct = my::from_row_opt(row);
-        if deconstruct.is_err() {
-            Err(deconstruct.unwrap_err())
-        } else {
-            let (id, lat, lon) = deconstruct.unwrap();
-            Ok(Coordinates {
-                id,
-                lat,
-                lon,
-            })
-        }
+        let (id, lat, lon) = my::from_row_opt(row)?;
+        Ok(Coordinates {
+            id,
+            lat,
+            lon,
+        })
     }
 }
 
@@ -49,22 +44,17 @@ impl FromRow for ResLocationResolved<'_> {
         unimplemented!()
     }
     fn from_row_opt(row: my::Row) -> Result<Self, my::FromRowError> {
-        let deconstruct = my::from_row_opt(row);
-        if deconstruct.is_err() {
-            Err(deconstruct.unwrap_err())
-        } else {
-            let (id, amount, radius, lat, lon, unit_id, res_name) = deconstruct.unwrap();
-            Ok(ResLocationResolved {
-                id,
-                amount,
-                radius,
-                lat,
-                lon,
-                unit_id,
-                unit: "",
-                res_name,
-            })
-        }
+        let (id, amount, radius, lat, lon, unit_id, res_name) = my::from_row_opt(row)?;
+        Ok(ResLocationResolved {
+            id,
+            amount,
+            radius,
+            lat,
+            lon,
+            unit_id,
+            unit: "",
+            res_name,
+        })
     }
 }
 impl ResLocationResolved<'_> {
@@ -92,20 +82,15 @@ impl FromRow for ResLocationBasic {
         unimplemented!()
     }
     fn from_row_opt(row: my::Row) -> Result<Self, my::FromRowError> {
-        let deconstruct = my::from_row_opt(row);
-        if deconstruct.is_err() {
-            Err(deconstruct.unwrap_err())
-        } else {
-            let (id, amount, radius, lat, lon, unit) = deconstruct.unwrap();
-            Ok(ResLocationBasic {
-                id,
-                amount,
-                lat,
-                lon,
-                radius,
-                unit,
-            })
-        }
+        let (id, amount, radius, lat, lon, unit) = my::from_row_opt(row)?;
+        Ok(ResLocationBasic {
+            id,
+            amount,
+            lat,
+            lon,
+            radius,
+            unit,
+        })
     }
 }
 

@@ -15,17 +15,12 @@ impl FromRow for Parameter {
         unimplemented!()
     }
     fn from_row_opt(row: my::Row) -> Result<Self, my::FromRowError> {
-        let deconstruct = my::from_row_opt(row);
-        if deconstruct.is_err() {
-            Err(deconstruct.unwrap_err())
-        } else {
-            let (id, name, unit) = deconstruct.unwrap();
-            Ok(Parameter {
-                id,
-                name,
-                unit
-            })
-        }
+        let (id, name, unit) = my::from_row_opt(row)?;
+        Ok(Parameter {
+            id,
+            name,
+            unit
+        })
     }
 }
 

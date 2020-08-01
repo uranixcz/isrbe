@@ -19,19 +19,14 @@ impl<'a> FromRow for TransformResolved<'a> {
         unimplemented!()
     }
     fn from_row_opt(row: my::Row) -> Result<Self, my::FromRowError> {
-        let deconstruct = my::from_row_opt(row);
-        if deconstruct.is_err() {
-            Err(deconstruct.unwrap_err())
-        } else {
-            let (id, type_id, refer) = deconstruct.unwrap();
-            Ok(TransformResolved {
-                id,
-                type_id,
-                type_name: "",
-                refer,
-                lines: Vec::new(),
-            })
-        }
+        let (id, type_id, refer) = my::from_row_opt(row)?;
+        Ok(TransformResolved {
+            id,
+            type_id,
+            type_name: "",
+            refer,
+            lines: Vec::new(),
+        })
     }
 }
 
@@ -47,18 +42,13 @@ impl FromRow for Transform {
         unimplemented!()
     }
     fn from_row_opt(row: my::Row) -> Result<Self, my::FromRowError> {
-        let deconstruct = my::from_row_opt(row);
-        if deconstruct.is_err() {
-            Err(deconstruct.unwrap_err())
-        } else {
-            let (id, type_id, refer, lines) = deconstruct.unwrap();
-            Ok(Transform {
-                id,
-                type_id,
-                refer,
-                lines
-            })
-        }
+        let (id, type_id, refer, lines) = my::from_row_opt(row)?;
+        Ok(Transform {
+            id,
+            type_id,
+            refer,
+            lines
+        })
     }
 }
 
@@ -73,26 +63,21 @@ impl<'a> FromRow for TransformLine<'a> {
         unimplemented!()
     }
     fn from_row_opt(row: my::Row) -> Result<Self, my::FromRowError> {
-        let deconstruct = my::from_row_opt(row);
-        if deconstruct.is_err() {
-            Err(deconstruct.unwrap_err())
-        } else {
-            let (id, amount, loc_id, loc_amount, lat, lon, radius, unit_id, res_name) = deconstruct.unwrap();
-            Ok(TransformLine {
-                id,
-                amount,
-                location: ResLocationResolved {
-                    id: loc_id,
-                    amount: loc_amount,
-                    radius,
-                    lat,
-                    lon,
-                    unit_id,
-                    unit: "",
-                    res_name,
-                }
-            })
-        }
+        let (id, amount, loc_id, loc_amount, lat, lon, radius, unit_id, res_name) = my::from_row_opt(row)?;
+        Ok(TransformLine {
+            id,
+            amount,
+            location: ResLocationResolved {
+                id: loc_id,
+                amount: loc_amount,
+                radius,
+                lat,
+                lon,
+                unit_id,
+                unit: "",
+                res_name,
+            }
+        })
     }
 }
 
@@ -119,7 +104,7 @@ pub fn get_transforms(conn: &Pool) -> Result<Vec<Transform>, String> {
 }
 
 pub fn get_transform_lines(id: u64, conn: &Pool) -> Result<Vec<TransformLine>, String> {
-    let mut query_result = conn.prep_exec("SELECT transform_line.id, val, 0, 0.0, location.lat, location.lon, resource_location.loc_radius, qty_id, resource.name FROM transform_line \
+    let query_result = conn.prep_exec("SELECT transform_line.id, val, 0, 0.0, location.lat, location.lon, resource_location.loc_radius, qty_id, resource.name FROM transform_line \
     JOIN resource_location ON transform_line.res_loc_id = resource_location.id \
     JOIN location ON resource_location.loc_id = location.id \
     JOIN resource_param ON resource_location.res_param_id = resource_param.id \
