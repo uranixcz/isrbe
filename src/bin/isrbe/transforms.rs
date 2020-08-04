@@ -5,9 +5,9 @@ use mysql as my;
 use my::prelude::FromRow;
 use std::fs;
 use isrbe::{catch_mysql_err, match_id, ERROR_PAGE, TransformType, get_transform_types, get_quantities};
-use isrbe::locations::{ResLocationResolved, get_resource_locations, get_res_amount_at_location};
+use isrbe::locations::{ResLocationResolved, get_all_resource_locations, get_res_amount_at_location};
 use std::borrow::Cow;
-use isrbe::transforms::{TransformResolved, TransformLine, Transform, get_transforms, add_transform, get_transform, get_transform_lines, modify_transform, add_line, res_is_available, res_move, res_manufacture, get_line, delete_line};
+use isrbe::transforms::{TransformResolved, TransformLine, Transform, get_transforms, add_transform, get_transform, get_transform_lines, modify_transform, add_line, get_available_resource_locations, res_move, res_manufacture, get_line, delete_line};
 
 #[derive(Serialize)]
 struct TransformContext<'a> {
@@ -51,7 +51,7 @@ pub fn transform(id: u64, conn: State<my::Pool>) -> Template {
         Ok(t) => t,
     };
 
-    let locations = match get_resource_locations(&conn) {
+    let locations = match get_all_resource_locations(&conn) {
         Err(e) => return Template::render(ERROR_PAGE, e),
         Ok(v) => v,
     };
@@ -148,13 +148,19 @@ pub fn deleteline(id: u64, conn: State<my::Pool>) -> Flash<Redirect> {
 
 #[get("/placeorder?<res_id>&<amount>&<location>")]
 pub fn place_order(res_id: u64, amount:f64, location: u64, conn: State<my::Pool>) -> Flash<Redirect> {
-    if res_is_available(res_id, amount, &conn) {
-        res_move(res_id, amount,location, &conn);
-        return Flash::success(Redirect::to("/"), "Resource delivered.");
-    }
-    match res_manufacture(res_id, amount, location, &conn) {
-        Ok(_) => Flash::success(Redirect::to("/"), "Resource manufactured and delivered."),
+    match get_available_resource_locations(res_id, amount, &conn) {
         Err(e) => Flash::error(Redirect::to("/"), e),
+        Ok(vec) => {
+            if vec.is_empty() {
+                match res_manufacture(res_id, amount, location, &conn) {
+                    Ok(_) => Flash::success(Redirect::to("/"), "Resource manufactured and delivered."),
+                    Err(e) => Flash::error(Redirect::to("/"), e),
+                };
+            }
+            res_move(res_id, amount,location, &conn);
+            Flash::success(Redirect::to("/"), "Resource delivered.")
+        }
     }
+
 }
 

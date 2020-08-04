@@ -35,7 +35,7 @@ use mysql as my;
 
 pub const ERROR_PAGE: &str = "error";
 pub static mut QUANTITIES: Vec<Quantity> = Vec::new();
-pub static mut RESOURCE_TYPES: Vec<ResourceType> = Vec::new();
+pub static mut RESOURCE_TYPES: Vec<ResourceType> = Vec::new(); // probably legacy
 pub static mut TRANSFORM_TYPES: Vec<TransformType> = Vec::new();
 pub fn init(pool: &my::Pool) {
     unsafe {

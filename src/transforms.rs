@@ -3,7 +3,7 @@ use my::prelude::FromRow;
 use my::{QueryResult, Pool};
 use std::fs;
 use crate::{catch_mysql_err, match_id, ERROR_PAGE, ResourceType, get_res_types, get_transform_types, get_quantities};
-use crate::locations::{ResLocationResolved, get_res_amount_at_location};
+use crate::locations::{ResLocationResolved, get_res_amount_at_location, get_all_resource_locations, get_resource_locations, ResLocationBasic};
 use std::borrow::Cow;
 
 #[derive(Serialize, Debug)]
@@ -138,15 +138,16 @@ pub fn add_line(transform_id: u64, amount: f64, location: u64, conn: &Pool) -> m
     conn.prep_exec("INSERT INTO transform_line (transform_hdr_id, res_loc_id, val) VALUES (?, ?, ?)", (transform_id, location, amount))
 }
 
-pub fn res_is_available(res_id: u64, amount: f64, conn: &Pool) -> bool {
-    unimplemented!()
+pub fn get_available_resource_locations(res_id: u64, amount: f64, conn: &Pool) -> Result<Vec<ResLocationBasic>, String> {
+    let locations = get_resource_locations(res_id, &conn)?;
+    Ok(locations.iter().filter(|x| x.amount.ge(&amount)).cloned().collect::<Vec<ResLocationBasic>>())
 }
 
 pub fn res_move(res_id: u64, amount: f64, destination: u64, conn: &Pool) {
     unimplemented!()
 }
 
-pub fn res_manufacture(res_id: u64, amount:f64, destination: u64, conn: &Pool) -> Result<&str, &str> {
+pub fn res_manufacture(res_id: u64, amount:f64, destination: u64, conn: &Pool) -> Result<&str, String> {
     struct ResAmount(u64, f64);
 
     fn res_get_dependencies(res_id: u64, conn: &Pool) -> Vec<ResAmount> {
@@ -154,15 +155,13 @@ pub fn res_manufacture(res_id: u64, amount:f64, destination: u64, conn: &Pool) -
     }
 
     let deps = res_get_dependencies(res_id, conn);
-    if deps.len() == 0 { return Err("Not enough resources.") }
+    if deps.is_empty() { return Err("Not enough resources.".to_string()) }
     for dep in deps.iter() {
-        if res_is_available(dep.0, dep.1, conn) {
+        if !get_available_resource_locations(dep.0, dep.1, conn)?.is_empty() {
             res_move(dep.0, dep.1, destination, conn);
         }
         else {
-            if let Err(e) = res_manufacture(dep.0, dep.1, destination, conn) {
-                return Err(e)
-            }
+            let _ = res_manufacture(dep.0, dep.1, destination, conn)?;
         }
     }
     Ok("Resource manufactured.")

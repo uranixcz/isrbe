@@ -6,7 +6,7 @@ use my::prelude::FromRow;
 use std::fs;
 use isrbe::{catch_mysql_err, match_id, ERROR_PAGE, get_quantities};
 use isrbe::parameters::Parameter;
-use isrbe::locations::{Coordinates, add_resource_location, get_resource_location_info, ResLocationResolved, get_locations, add_location, get_locations_of_resource, set_resource_amount_at_location};
+use isrbe::locations::{Coordinates, add_resource_location, get_resource_location_info, ResLocationResolved, get_locations, add_location, get_resource_locations, set_resource_amount_at_location};
 use isrbe::locations::transport::*;
 use mysql::Pool;
 
@@ -98,7 +98,7 @@ pub fn locations(conn: State<my::Pool>) -> Template {
 
 #[get("/resource/<id>/locations")]
 pub fn reslocations(id: u64, conn: State<my::Pool>) -> Template {
-    match get_locations_of_resource(id, &conn) {
+    match get_resource_locations(id, &conn) {
         Ok(v) => Template::render("reslocations", v),
         Err(e) => Template::render(ERROR_PAGE, e)
     }

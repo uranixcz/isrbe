@@ -68,10 +68,10 @@ impl ResLocationResolved<'_> {
     }
 }
 
-#[derive(Serialize, Debug)]
+#[derive(Serialize, Debug, Clone)]
 pub struct ResLocationBasic {
     id: u64,
-    amount: f64,
+    pub amount: f64,
     lat: f64,
     lon: f64,
     radius: u64,
@@ -119,12 +119,12 @@ pub fn add_location(lat: f64, lon: f64, conn: &Pool) -> my::Result<QueryResult> 
     conn.prep_exec("INSERT INTO location (lat, lon) VALUES (?, ?)", (lat, lon))
 }
 
-pub fn get_locations_of_resource(id: u64, conn: &Pool) -> Result<Vec<ResLocationBasic>, String> {
+pub fn get_resource_locations(id: u64, conn: &Pool) -> Result<Vec<ResLocationBasic>, String> {
     let query_result = conn.prep_exec(fs::read_to_string("sql/reslocations.sql").expect("file error"), (id,));
     catch_mysql_err(query_result)
 }
 
-pub fn get_resource_locations(conn: &Pool) -> Result<Vec<ResLocationResolved>, String> {
+pub fn get_all_resource_locations(conn: &Pool) -> Result<Vec<ResLocationResolved>, String> {
     let query_result = conn.prep_exec("SELECT resource_location.id, loc_val, loc_radius, location.lat, location.lon, qty_id, resource.name FROM resource_location \
     JOIN resource_param ON resource_location.res_param_id = resource_param.id \
     JOIN resource ON resource_param.res_id = resource.id \
