@@ -6,7 +6,7 @@ use std::fs;
 use isrbe::{catch_mysql_err, match_id, ERROR_PAGE, ResourceType, get_res_types};
 use isrbe::resources::*;
 use isrbe::locations::Coordinates;
-use isrbe::parameters::{Parameter, get_parameters};
+use isrbe::parameters::{Parameter, get_parameters, Parameter2};
 use isrbe::locations::get_locations;
 
 #[derive(Serialize)]
@@ -15,7 +15,7 @@ struct ResourceContext<'a> {
     parameters: Vec<Parameter>,
     resource: Option<ResourceBasic<'a>>,
     coordinates: Vec<Coordinates>,
-    parameter_list: Vec<(u64, String, String)>,
+    parameter_list: Vec<Parameter2<'a>>,
 }
 
 #[get("/resources")]

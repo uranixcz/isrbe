@@ -64,16 +64,11 @@ impl FromRow for ResourceType {
         unimplemented!()
     }
     fn from_row_opt(row: my::Row) -> Result<Self, my::FromRowError> {
-        let deconstruct = my::from_row_opt(row);
-        if deconstruct.is_err() {
-            Err(deconstruct.unwrap_err())
-        } else {
-            let (id, type_name) = deconstruct.unwrap();
-            Ok(ResourceType {
-                id,
-                type_name
-            })
-        }
+        let (id, type_name) = my::from_row_opt(row)?;
+        Ok(ResourceType {
+            id,
+            type_name
+        })
     }
 }
 
@@ -87,16 +82,11 @@ impl FromRow for TransformType {
         unimplemented!()
     }
     fn from_row_opt(row: my::Row) -> Result<Self, my::FromRowError> {
-        let deconstruct = my::from_row_opt(row);
-        if deconstruct.is_err() {
-            Err(deconstruct.unwrap_err())
-        } else {
-            let (id, type_name) = deconstruct.unwrap();
-            Ok(TransformType {
-                id,
-                type_name
-            })
-        }
+        let (id, type_name) = my::from_row_opt(row)?;
+        Ok(TransformType {
+            id,
+            type_name
+        })
     }
 }
 
@@ -111,17 +101,12 @@ impl FromRow for Quantity {
         unimplemented!()
     }
     fn from_row_opt(row: my::Row) -> Result<Self, my::FromRowError> {
-        let deconstruct = my::from_row_opt(row);
-        if deconstruct.is_err() {
-            Err(deconstruct.unwrap_err())
-        } else {
-            let (id, name, unit) = deconstruct.unwrap();
-            Ok(Quantity {
-                id,
-                name,
-                unit,
-            })
-        }
+        let (id, name, unit) = my::from_row_opt(row)?;
+        Ok(Quantity {
+            id,
+            name,
+            unit,
+        })
     }
 }
 
