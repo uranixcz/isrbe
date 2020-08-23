@@ -74,7 +74,7 @@ impl FromRow for ResourceType {
 
 #[derive(Serialize, Debug)]
 pub struct TransformType {
-    id: u64,
+    pub id: u64,
     pub type_name: String,
 }
 impl FromRow for TransformType {

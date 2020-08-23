@@ -5,6 +5,7 @@ use std::fs;
 use crate::{catch_mysql_err, match_id, ERROR_PAGE, ResourceType, get_res_types, get_transform_types, get_quantities};
 use crate::locations::{ResLocationResolved, get_res_amount_at_location, get_all_resource_locations, get_resource_locations, ResLocationBasic};
 use std::borrow::Cow;
+use crate::parameters::get_res_dependencies;
 
 #[derive(Serialize, Debug)]
 pub struct TransformResolved<'a> {
@@ -114,8 +115,9 @@ pub fn get_transform_lines(id: u64, conn: &Pool) -> Result<Vec<TransformLine>, S
     catch_mysql_err(query_result)
 }
 
-pub fn add_transform<'a>(refer: &'a String, type_id: u64, conn: &'a Pool) -> my::Result<QueryResult<'a>> {
-    conn.prep_exec("INSERT INTO transform_hdr (ref, type_id) VALUES (?, ?)", (refer, type_id))
+pub fn add_transform(refer: String, type_id: u64, conn: &Pool) -> Result<Vec<u64>, String> {
+    let query_result = conn.prep_exec("INSERT INTO transform_hdr (ref, type_id) VALUES (?, ?); SELECT LAST_INSERT_ID();", (refer, type_id));
+    catch_mysql_err(query_result)
 }
 
 pub fn modify_transform(id: u64, refer: String, type_id: u64, conn: &Pool) -> my::Result<QueryResult> {
@@ -132,10 +134,10 @@ pub fn delete_line(id: u64, location: u64, amount: f64, conn: &Pool) -> my::Resu
     conn.prep_exec("UPDATE resource_location SET loc_val = loc_val - ? WHERE id = ?", (amount, location))
 }
 
-pub fn add_line(transform_id: u64, amount: f64, location: u64, conn: &Pool) -> my::Result<QueryResult> {
+pub fn add_line(transform_id: u64, amount: f64, res_location: u64, conn: &Pool) -> my::Result<QueryResult> {
     // TODO should be in transaction
-    let _ = conn.prep_exec("UPDATE resource_location SET loc_val = loc_val + ? WHERE id = ?", (amount, location))?;
-    conn.prep_exec("INSERT INTO transform_line (transform_hdr_id, res_loc_id, val) VALUES (?, ?, ?)", (transform_id, location, amount))
+    let _ = conn.prep_exec("UPDATE resource_location SET loc_val = loc_val + ? WHERE id = ?", (amount, res_location))?;
+    conn.prep_exec("INSERT INTO transform_line (transform_hdr_id, res_loc_id, val) VALUES (?, ?, ?)", (transform_id, res_location, amount))
 }
 
 pub fn get_available_resource_locations(res_id: u64, amount: f64, conn: &Pool) -> Result<Vec<ResLocationBasic>, String> {
@@ -143,26 +145,23 @@ pub fn get_available_resource_locations(res_id: u64, amount: f64, conn: &Pool) -
     Ok(locations.iter().filter(|x| x.amount.ge(&amount)).cloned().collect::<Vec<ResLocationBasic>>())
 }
 
-pub fn res_move(res_id: u64, amount: f64, destination: u64, conn: &Pool) {
+pub fn res_move(res_id: u64, amount: f64, locations: Vec<ResLocationBasic>, destination: u64, conn: &Pool) -> Result<(), String> { //TODO don't move if it's the same location
     unimplemented!()
 }
 
-pub fn res_manufacture(res_id: u64, amount:f64, destination: u64, conn: &Pool) -> Result<&str, String> {
-    struct ResAmount(u64, f64);
-
-    fn res_get_dependencies(res_id: u64, conn: &Pool) -> Vec<ResAmount> {
-        unimplemented!()
-    }
-
-    let deps = res_get_dependencies(res_id, conn);
+pub fn res_manufacture(res_id: u64, amount:f64, destination: u64, transform_id: u64, conn: &Pool) -> Result<(), String> {
+    let deps = get_res_dependencies(res_id, conn)?;
     if deps.is_empty() { return Err("Not enough resources.".to_string()) }
     for dep in deps.iter() {
-        if !get_available_resource_locations(dep.0, dep.1, conn)?.is_empty() {
-            res_move(dep.0, dep.1, destination, conn);
+        let locations = get_available_resource_locations(dep.0, dep.1, conn)?;
+        if locations.is_empty() {
+            let _ = res_manufacture(dep.0, dep.1, destination, transform_id, conn)?;
         }
         else {
-            let _ = res_manufacture(dep.0, dep.1, destination, conn)?;
+            res_move(dep.0, dep.1, locations, destination, conn)?;
+            //add_line(transform_id, -dep.1, destination, conn)?;
+            //add_line(transform_id, amount, destination, conn)?;
         }
     }
-    Ok("Resource manufactured.")
+    Ok(())
 }

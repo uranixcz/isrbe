@@ -131,6 +131,15 @@ pub fn get_parameter_type_by_res_param(res_param_id: u64, conn: &Pool) -> Result
     catch_mysql_err(query_result)
 }
 
+/// Returns vector of Resource ID and amount
+pub fn get_res_dependencies(res_id: u64, conn: &Pool) -> Result<Vec<(u64, f64)>, String> {
+    let query_result = conn.prep_exec("SELECT rp2.res_id, val_float FROM resource_param \
+        JOIN param_val ON param_val.res_param_id = resource_param.id \
+        JOIN resource_param rp2 ON rp2.id = param_val.val_res \
+        WHERE resource_param.res_id = ?", (res_id,));
+    catch_mysql_err(query_result)
+}
+
 pub fn add_parameter(name: String, type_id: u64, mut unit: u64, conn: &Pool) -> my::Result<QueryResult> {
     if type_id != 1 {
         unit = 0;
