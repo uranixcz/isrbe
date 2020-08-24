@@ -134,10 +134,16 @@ pub fn delete_line(id: u64, location: u64, amount: f64, conn: &Pool) -> my::Resu
     conn.prep_exec("UPDATE resource_location SET loc_val = loc_val - ? WHERE id = ?", (amount, location))
 }
 
-pub fn add_line(transform_id: u64, amount: f64, res_location: u64, conn: &Pool) -> my::Result<QueryResult> {
+pub fn add_line(transform_id: u64, amount: f64, res_location: u64, conn: &Pool) -> Result<(), String> {
     // TODO should be in transaction
-    let _ = conn.prep_exec("UPDATE resource_location SET loc_val = loc_val + ? WHERE id = ?", (amount, res_location))?;
-    conn.prep_exec("INSERT INTO transform_line (transform_hdr_id, res_loc_id, val) VALUES (?, ?, ?)", (transform_id, res_location, amount))
+    if let Err(e) = conn.prep_exec("UPDATE resource_location SET loc_val = loc_val + ? WHERE id = ?", (amount, res_location)) {
+        return Err(e.to_string())
+    }
+    if let Err(e) = conn.prep_exec("INSERT INTO transform_line (transform_hdr_id, res_loc_id, val) VALUES (?, ?, ?)", (transform_id, res_location, amount)) {
+        return Err(e.to_string())
+    } else {
+        Ok(())
+    }
 }
 
 pub fn get_available_resource_locations(res_id: u64, amount: f64, conn: &Pool) -> Result<Vec<ResLocationBasic>, String> {
@@ -145,23 +151,39 @@ pub fn get_available_resource_locations(res_id: u64, amount: f64, conn: &Pool) -
     Ok(locations.iter().filter(|x| x.amount.ge(&amount)).cloned().collect::<Vec<ResLocationBasic>>())
 }
 
-pub fn res_move(res_id: u64, amount: f64, locations: Vec<ResLocationBasic>, destination: u64, conn: &Pool) -> Result<(), String> { //TODO don't move if it's the same location
-    unimplemented!()
+pub fn res_move_auto(res_id: u64, amount: f64, destination: u64, transform_id: u64, conn: &Pool) -> Result<Option<u64>, String> { //TODO don't move if it's the same location
+    let locations = get_available_resource_locations(res_id, amount, &conn)?;
+    if locations.is_empty() {
+        Ok(None)
+    } else {
+        let source = locations[0].id; // TODO insert routing algorithm here
+        add_line(transform_id, -amount, source, &conn)?;
+        add_line(transform_id, amount, destination, &conn)?;  // TODO transaction here
+        Ok(Some(source))
+    }
 }
 
 pub fn res_manufacture(res_id: u64, amount:f64, destination: u64, transform_id: u64, conn: &Pool) -> Result<(), String> {
     let deps = get_res_dependencies(res_id, conn)?;
     if deps.is_empty() { return Err("Not enough resources.".to_string()) }
     for dep in deps.iter() {
-        let locations = get_available_resource_locations(dep.0, dep.1, conn)?;
+        match res_move_auto(dep.0, dep.1, destination, transform_id, conn) {
+            Err(e) => return Err(e),
+            Ok(None) => return res_manufacture(dep.0, dep.1, destination, transform_id, conn),
+            Ok(Some(source)) => {
+                add_line(transform_id, -dep.1, source, conn)?;
+                add_line(transform_id, amount, destination, conn)?;
+            }
+        }
+
+        /*let locations = get_available_resource_locations(dep.0, dep.1, conn)?;
         if locations.is_empty() {
             let _ = res_manufacture(dep.0, dep.1, destination, transform_id, conn)?;
         }
         else {
-            res_move(dep.0, dep.1, locations, destination, conn)?;
-            //add_line(transform_id, -dep.1, destination, conn)?;
-            //add_line(transform_id, amount, destination, conn)?;
-        }
+            res_move_auto(dep.0, dep.1, destination, conn)?;
+
+        }*/
     }
     Ok(())
 }

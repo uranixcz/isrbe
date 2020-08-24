@@ -7,7 +7,7 @@ use std::fs;
 use isrbe::{catch_mysql_err, match_id, ERROR_PAGE, TransformType, get_transform_types, get_quantities};
 use isrbe::locations::{ResLocationResolved, get_all_resource_locations, get_res_amount_at_location};
 use std::borrow::Cow;
-use isrbe::transforms::{TransformResolved, TransformLine, Transform, get_transforms, add_transform, get_transform, get_transform_lines, modify_transform, add_line, get_available_resource_locations, res_move, res_manufacture, get_line, delete_line};
+use isrbe::transforms::{TransformResolved, TransformLine, Transform, get_transforms, add_transform, get_transform, get_transform_lines, modify_transform, add_line, get_available_resource_locations, res_move_auto, res_manufacture, get_line, delete_line};
 use std::ops::Add;
 
 #[derive(Serialize)]
@@ -90,7 +90,7 @@ pub fn addline(transform_id: u64, amount: f64, location: u64, conn: State<my::Po
 
     match add_line(transform_id, amount, location, &conn) {
         Ok(_) => Flash::success(Redirect::to("/"), Cow::Borrowed("Transform event added.")),
-        Err(e) => Flash::error(Redirect::to("/"), Cow::Owned(e.to_string())),
+        Err(e) => Flash::error(Redirect::to("/"), Cow::Owned(e)),
     }
 }
 
@@ -153,7 +153,20 @@ pub fn place_order(res_id: u64, amount:f64, location: u64, conn: State<my::Pool>
         Err(e) => return Flash::error(Redirect::to("/"), e),
         Ok(v) => v[0],
     };
-    match get_available_resource_locations(res_id, amount, &conn) {
+
+    match res_move_auto(res_id, amount, location, transform_id, &conn) {
+        Err(e) => Flash::error(Redirect::to("/"), e), // TODO here we should delete the previous transform on error or make db transaction
+        Ok(None) => {
+            match res_manufacture(res_id, amount, location, transform_id, &conn) {
+                Ok(_) => Flash::success(Redirect::to("/"), "Resource manufactured and delivered."),
+                Err(e) => Flash::error(Redirect::to("/"), e),
+            }
+        },
+        Ok(Some(_)) => Flash::success(Redirect::to("/"), "Resource delivered."),
+        }
+    }
+
+    /*match get_available_resource_locations(res_id, amount, &conn) {
         Err(e) => Flash::error(Redirect::to("/"), e),
         Ok(locations) => {
             if locations.is_empty() {
@@ -162,12 +175,12 @@ pub fn place_order(res_id: u64, amount:f64, location: u64, conn: State<my::Pool>
                     Err(e) => Flash::error(Redirect::to("/"), e),
                 };
             }
-            match res_move(res_id, amount, locations, location, &conn) {
+            match res_move(res_id, amount, location, &conn) {
                 Err(e) => Flash::error(Redirect::to("/"), e), // TODO here we should delete the previous transform on error or make db transaction
                 Ok(_) => Flash::success(Redirect::to("/"), "Resource delivered.")
             }
         }
     }
 
-}
+}*/
 

@@ -70,7 +70,7 @@ impl ResLocationResolved<'_> {
 
 #[derive(Serialize, Debug, Clone)]
 pub struct ResLocationBasic {
-    id: u64,
+    pub(crate) id: u64,
     pub amount: f64,
     lat: f64,
     lon: f64,
