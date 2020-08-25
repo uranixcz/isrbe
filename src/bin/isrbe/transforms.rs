@@ -6,7 +6,6 @@ use my::prelude::FromRow;
 use std::fs;
 use isrbe::{catch_mysql_err, match_id, ERROR_PAGE, TransformType, get_transform_types, get_quantities};
 use isrbe::locations::{ResLocationResolved, get_all_resource_locations, get_res_amount_at_location};
-use std::borrow::Cow;
 use isrbe::transforms::{TransformResolved, TransformLine, Transform, get_transforms, add_transform, get_transform, get_transform_lines, modify_transform, add_line, get_available_resource_locations, res_move_auto, res_manufacture, get_line, delete_line};
 use std::ops::Add;
 
@@ -75,22 +74,22 @@ pub fn modifytransform(id: u64, refer: String, type_id: u64, conn: State<my::Poo
 #[get("/addline?<transform_id>&<amount>&<location>")]
 pub fn addline(transform_id: u64, amount: f64, location: u64, conn: State<my::Pool>) -> Flash<Redirect> {
     if amount == 0.0 {
-        return Flash::error(Redirect::to("/"), Cow::Borrowed("Event cannot have 0 amount."));
+        return Flash::error(Redirect::to("/"), "Event cannot have 0 amount.");
     }
     // get original resource amount at location
     let orig_value: f64 = match get_res_amount_at_location(location, &conn) {
-        Err(e) => return Flash::error(Redirect::to("/"), Cow::Owned(e.to_string())),
-        Ok(None) => return Flash::error(Redirect::to("/"), Cow::Borrowed("No such resource location.")),
+        Err(e) => return Flash::error(Redirect::to("/"), &e.to_string()),
+        Ok(None) => return Flash::error(Redirect::to("/"), "No such resource location."),
         Ok(Some(row)) => row.get(0).unwrap(),
     };
     // test for negative amount of resource at location
     if orig_value + amount < 0.0 {
-        return Flash::error(Redirect::to("/"), Cow::Borrowed("Amount at location must not be negative."));
+        return Flash::error(Redirect::to("/"), "Amount at location must not be negative.");
     }
 
     match add_line(transform_id, amount, location, &conn) {
-        Ok(_) => Flash::success(Redirect::to("/"), Cow::Borrowed("Transform event added.")),
-        Err(e) => Flash::error(Redirect::to("/"), Cow::Owned(e)),
+        Ok(_) => Flash::success(Redirect::to("/"), "Transform event added."),
+        Err(e) => Flash::error(Redirect::to("/"), &e),
     }
 }
 

@@ -4,7 +4,6 @@ use my::{QueryResult, Pool};
 use std::fs;
 use crate::{catch_mysql_err, match_id, ERROR_PAGE, ResourceType, get_res_types, get_transform_types, get_quantities};
 use crate::locations::{ResLocationResolved, get_res_amount_at_location, get_all_resource_locations, get_resource_locations, ResLocationBasic};
-use std::borrow::Cow;
 use crate::parameters::get_res_dependencies;
 
 #[derive(Serialize, Debug)]
