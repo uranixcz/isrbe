@@ -1,4 +1,4 @@
-SELECT resource.id, resource.name, resource_type.res_type_name,
+SELECT resource.id, resource.name, 999999, resource_type.res_type_name,
 (SELECT COUNT(resource_location.id) FROM resource_location
 	JOIN resource_param ON resource_param.id = resource_location.res_param_id
 	WHERE resource.id = resource_param.res_id AND resource_param.is_movable = 1) as "locations",

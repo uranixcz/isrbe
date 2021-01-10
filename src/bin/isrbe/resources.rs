@@ -13,7 +13,7 @@ use isrbe::locations::get_locations;
 struct ResourceContext<'a> {
     types: &'a Vec<ResourceType>,
     parameters: Vec<Parameter>,
-    resource: Option<ResourceBasic<'a>>,
+    resource: Option<Resource>,
     coordinates: Vec<Coordinates>,
     parameter_list: Vec<Parameter2<'a>>,
 }
@@ -46,7 +46,7 @@ pub fn resource(id: u64, conn: State<my::Pool>) -> Template {
         Ok(r) => r,
     };
     // TODO make this more universal in struct? Or automatic in get_resource?
-    resource.type_name = &get_res_types()[match_id(resource.type_id)].type_name;
+    resource.type_name = get_res_types()[match_id(resource.type_id)].type_name.clone();
 
     // get list of assigned parameters for location form
     let params = match get_assigned_parameters(id, &conn) {

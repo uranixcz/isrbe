@@ -7,60 +7,38 @@ use crate::locations::Coordinates;
 use crate::parameters::Parameter;
 
 #[derive(Serialize, Debug)]
-pub struct ResourceBasic<'a>{
+pub struct Resource {
     id: u64,
     name: String,
     pub type_id: u64,
-    pub type_name: &'a str,
-    //locations: Vec<ResLocation<'a>>,
-}
-impl<'a> FromRow for ResourceBasic<'a> {
-    fn from_row(_row: my::Row) -> Self {
-        unimplemented!()
-    }
-    fn from_row_opt(row: my::Row) -> Result<Self, my::FromRowError> {
-        let (id, name, type_id) = my::from_row_opt(row)?;
-        Ok(ResourceBasic {
-            id,
-            name,
-            type_id,
-            type_name: "",
-            //locations: Vec::new(),
-        })
-    }
-}
-
-#[derive(Serialize, Debug)]
-pub struct ResourceResolvedType {
-    id: u64,
-    name: String,
-    type_id: String,
+    pub type_name: String,
     locations: u64,
     parameters: u64,
 }
-impl FromRow for ResourceResolvedType {
+impl FromRow for Resource {
     fn from_row(_row: my::Row) -> Self {
         unimplemented!()
     }
     fn from_row_opt(row: my::Row) -> Result<Self, my::FromRowError> {
-        let (id, name, type_id, locations, parameters) = my::from_row_opt(row)?;
-        Ok(ResourceResolvedType {
+        let (id, name, type_id, type_name, locations, parameters) = my::from_row_opt(row)?;
+        Ok(Resource {
             id,
             name,
             type_id,
+            type_name,
             locations,
             parameters
         })
     }
 }
 
-pub fn get_resources(conn: &Pool) -> Result<Vec<ResourceResolvedType>, String> {
+pub fn get_resources(conn: &Pool) -> Result<Vec<Resource>, String> {
     let query_result = conn.prep_exec(fs::read_to_string("sql/resources.sql").expect("file error"), ());
     catch_mysql_err(query_result)
 }
 
-pub fn get_resource(id: u64, conn: &Pool) -> Result<ResourceBasic, String> {
-    let query_result = conn.prep_exec("SELECT id, name, type_id FROM resource WHERE id = ?", (id,));
+pub fn get_resource(id: u64, conn: &Pool) -> Result<Resource, String> {
+    let query_result = conn.prep_exec("SELECT id, name, type_id, \"\", 999999, 999999 FROM resource WHERE id = ?", (id,));
     Ok(catch_mysql_err(query_result)?.remove(0))
 }
 
