@@ -3,7 +3,7 @@ use my::prelude::FromRow;
 use my::{QueryResult, Pool};
 use std::fs;
 use crate::{catch_mysql_err, match_id, ERROR_PAGE, ResourceType, get_res_types, get_transform_types, get_quantities};
-use crate::locations::{ResLocationResolved, get_res_amount_at_location, get_all_resource_locations, get_resource_locations, ResLocationBasic};
+use crate::locations::{ResLocationResolved, get_res_amount_at_location, get_all_resource_locations, get_resource_locations, ResLocationBasic, distance, get_resource_location_info};
 use crate::parameters::get_res_dependencies;
 
 #[derive(Serialize, Debug)]
@@ -155,7 +155,18 @@ pub fn res_move_auto(res_id: u64, amount: f64, destination: u64, transform_id: u
     if locations.is_empty() {
         Ok(None)
     } else {
-        let source = locations[0].id; // TODO insert routing algorithm here
+        let address = get_resource_location_info(destination, conn).unwrap();
+        let mut source= locations[0].id;
+        let mut distance = f64::MAX;
+        for location in locations.iter() {
+            let tmp_distance = crate::locations::distance((address.lat, address.lon), (location.lat, location.lon));
+            if tmp_distance < distance {
+                if destination != location.id {
+                    distance = tmp_distance;
+                    source = location.id;
+                }
+            }
+        }
         add_line(transform_id, -amount, source, &conn)?;
         add_line(transform_id, amount, destination, &conn)?;  // TODO transaction here
         Ok(Some(source))

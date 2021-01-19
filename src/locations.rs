@@ -72,8 +72,8 @@ impl ResLocationResolved<'_> {
 pub struct ResLocationBasic {
     pub(crate) id: u64,
     pub amount: f64,
-    lat: f64,
-    lon: f64,
+    pub(crate) lat: f64,
+    pub(crate) lon: f64,
     radius: u64,
     unit: String
 }
@@ -139,4 +139,10 @@ pub fn get_all_resource_locations(conn: &Pool) -> Result<Vec<ResLocationResolved
 
 pub fn set_resource_amount_at_location(id: u64, amount: f64, conn: &Pool) -> my::Result<QueryResult> {
     conn.prep_exec("UPDATE resource_location SET loc_val = ? WHERE id = ?", (amount, id))
+}
+
+pub fn distance(point1: (f64, f64), point2: (f64, f64)) -> f64 {
+    let distance_x = point1.0 - point2.0;
+    let distance_y = point1.1 - point2.1;
+    distance_x.hypot(distance_y)
 }
