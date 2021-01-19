@@ -5,6 +5,8 @@ The present data model supports locations, unlimited number of parameters to des
 However only a few of these functions are available at the moment and have to be done manually like the ability to record resources and their transformations into other resources.
 Next step is to have fully automated order resolution based on resource dependencies and distance.
 
+![Current database model](model.png)
+
 # Usage
 After you add a resource, you can assign locations and amounts to it even in different units. When you want to for example turn flour into bread you make a transformation, then edit it and add all the events describing it.
 
